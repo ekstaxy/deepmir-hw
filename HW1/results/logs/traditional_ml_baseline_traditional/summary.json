@@ -1,0 +1,239 @@
+{
+  "experiment_name": "traditional_ml_baseline_traditional",
+  "duration_seconds": 209.74899101257324,
+  "duration_formatted": "0:03:29",
+  "total_steps": 0,
+  "config": {
+    "project": {
+      "name": "singer_classification",
+      "version": "1.0",
+      "author": "DeepMIR Student",
+      "seed": 42
+    },
+    "dataset": {
+      "name": "artist20",
+      "root_path": "data/processed",
+      "train_json": "data/processed/train.json",
+      "val_json": "data/processed/val.json",
+      "test_dir": "data/processed/test",
+      "num_classes": 20,
+      "sample_rate": 16000,
+      "channels": 1
+    },
+    "audio": {
+      "sample_rate": 16000,
+      "n_fft": 4096,
+      "hop_length": 512,
+      "n_mels": 128,
+      "f_min": 80.0,
+      "f_max": 8000.0,
+      "max_duration": 5.0,
+      "normalize": true
+    },
+    "data_split": {
+      "train_ratio": 0.8,
+      "val_ratio": 0.2,
+      "test_ratio": 0.0,
+      "stratify": true
+    },
+    "training": {
+      "batch_size": null,
+      "num_epochs": null,
+      "learning_rate": null,
+      "weight_decay": 0.0001,
+      "early_stopping_patience": 10,
+      "save_best_only": true
+    },
+    "evaluation": {
+      "metrics": [
+        "top1_accuracy",
+        "top3_accuracy",
+        "confusion_matrix"
+      ],
+      "save_predictions": true,
+      "save_probabilities": false
+    },
+    "logging": {
+      "level": "INFO",
+      "save_logs": true,
+      "log_dir": "results/logs",
+      "experiment_name": null
+    },
+    "wandb": {
+      "project": "singer_classification",
+      "entity": null,
+      "log_model": false,
+      "log_gradients": false,
+      "log_freq": 10
+    },
+    "device": {
+      "use_cuda": "auto",
+      "device_id": 0,
+      "num_workers": 2,
+      "pin_memory": true,
+      "force_cpu": false
+    },
+    "paths": {
+      "checkpoints": "results/checkpoints",
+      "predictions": "results/predictions",
+      "visualizations": "results/visualizations",
+      "processed_data": "data/processed",
+      "features": "data/processed/features"
+    },
+    "reproducibility": {
+      "deterministic": true,
+      "benchmark": false,
+      "set_seed_everywhere": true
+    },
+    "experiment": {
+      "type": "traditional_ml",
+      "name": "baseline_traditional",
+      "description": "Baseline traditional ML with hand-crafted features"
+    },
+    "features": {
+      "extract_features": [
+        "mfcc",
+        "spectral_centroid",
+        "spectral_rolloff",
+        "spectral_bandwidth",
+        "zero_crossing_rate"
+      ],
+      "mfcc": {
+        "n_mfcc": 15,
+        "n_fft": 4096,
+        "hop_length": 512,
+        "delta": true,
+        "delta2": true
+      },
+      "spectral": {
+        "n_fft": 4096,
+        "hop_length": 512
+      },
+      "chroma": {
+        "n_chroma": 12,
+        "n_fft": 4096,
+        "hop_length": 512
+      },
+      "tonnetz": {
+        "n_fft": 2048,
+        "hop_length": 512
+      }
+    },
+    "preprocessing": {
+      "aggregation": {
+        "methods": [
+          "mean",
+          "std",
+          "min",
+          "max",
+          "median"
+        ]
+      },
+      "normalization": {
+        "method": "standard",
+        "per_feature": true
+      },
+      "dimensionality_reduction": {
+        "method": null,
+        "n_components": 0.95
+      },
+      "silence_db_threshold": 30
+    },
+    "models": {
+      "knn": {
+        "n_neighbors": 1,
+        "weights": "distance",
+        "metric": "euclidean"
+      },
+      "svm": {
+        "C": 10.0,
+        "kernel": "rbf",
+        "gamma": 0.001
+      },
+      "random_forest": {
+        "n_estimators": [
+          50,
+          100,
+          200,
+          300,
+          500,
+          800,
+          1000
+        ],
+        "max_depth": [
+          5,
+          10,
+          15,
+          20,
+          30,
+          50,
+          null
+        ],
+        "min_samples_split": [
+          2,
+          3,
+          5,
+          10,
+          15,
+          20
+        ],
+        "min_samples_leaf": [
+          2,
+          3,
+          5,
+          7,
+          9,
+          15,
+          20
+        ]
+      },
+      "gradient_boosting": {
+        "n_estimators": [
+          100,
+          200,
+          300
+        ],
+        "learning_rate": [
+          0.01,
+          0.1,
+          0.2
+        ],
+        "max_depth": [
+          3,
+          5,
+          7
+        ]
+      },
+      "logistic_regression": {
+        "C": [
+          0.1,
+          1.0,
+          10.0,
+          100.0
+        ],
+        "penalty": [
+          "l1",
+          "l2",
+          "elasticnet"
+        ],
+        "solver": [
+          "liblinear",
+          "saga"
+        ]
+      }
+    },
+    "cross_validation": {
+      "method": "stratified_kfold",
+      "n_splits": 5,
+      "shuffle": true
+    },
+    "hyperparameter_tuning": {
+      "method": "grid_search",
+      "scoring": "accuracy",
+      "cv_folds": 3,
+      "n_jobs": -1,
+      "verbose": 1
+    }
+  },
+  "log_directory": "results\\logs\\traditional_ml_baseline_traditional"
+}

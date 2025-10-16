@@ -1,0 +1,13 @@
+{
+  "experiment_name": "deep_learning_CNN",
+  "start_time": "2025-09-24T19:08:40.652822",
+  "tags": [
+    "deep_learning",
+    "cnn",
+    "classification"
+  ],
+  "notes": "Training CNN models for end-to-end singer classification",
+  "config_path": "results\\logs\\deep_learning_CNN\\config.yaml",
+  "use_wandb": true,
+  "wandb_url": null
+}

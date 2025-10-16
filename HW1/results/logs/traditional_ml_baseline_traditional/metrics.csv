@@ -1,0 +1,3 @@
+knn/top1_accuracy,knn/top3_accuracy,knn/final_score,timestamp,elapsed_time,random_forest/top1_accuracy,random_forest/top3_accuracy,random_forest/final_score
+1.0,1.0,1.5,1758829290.777854,10.206712245941162,,,
+,,,1758829291.3659327,10.794790983200073,1.0,1.0,1.5
