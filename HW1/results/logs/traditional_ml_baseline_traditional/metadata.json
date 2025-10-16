@@ -1,0 +1,12 @@
+{
+  "experiment_name": "traditional_ml_baseline_traditional",
+  "start_time": "2025-09-27T20:31:04.183618",
+  "tags": [
+    "traditional_ml",
+    "classification"
+  ],
+  "notes": "Training k-NN, SVM, and Random Forest classifiers",
+  "config_path": "results\\logs\\traditional_ml_baseline_traditional\\config.yaml",
+  "use_wandb": false,
+  "wandb_url": null
+}

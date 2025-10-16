@@ -1,0 +1,9 @@
+{
+  "experiment_name": "simple_test",
+  "start_time": "2025-09-13T18:41:01.741366",
+  "tags": [],
+  "notes": "",
+  "config_path": "results\\logs\\simple_test\\config.yaml",
+  "use_wandb": false,
+  "wandb_url": null
+}

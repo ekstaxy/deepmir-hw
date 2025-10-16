@@ -1,0 +1,287 @@
+{
+  "experiment_name": "simple_test",
+  "duration_seconds": 0.01506495475769043,
+  "duration_formatted": "0:00:00",
+  "total_steps": 1,
+  "config": {
+    "project": {
+      "name": "singer_classification",
+      "version": "1.0",
+      "author": "DeepMIR Student",
+      "seed": 42
+    },
+    "dataset": {
+      "name": "artist20",
+      "root_path": "data/raw/artist20",
+      "train_json": "data/raw/artist20/train.json",
+      "val_json": "data/raw/artist20/val.json",
+      "test_dir": "data/raw/artist20/test",
+      "num_classes": 20,
+      "sample_rate": 16000,
+      "channels": 1
+    },
+    "audio": {
+      "sample_rate": 16000,
+      "n_fft": 2048,
+      "hop_length": 512,
+      "n_mels": 128,
+      "max_duration": 30.0,
+      "normalize": true
+    },
+    "data_split": {
+      "train_ratio": 0.8,
+      "val_ratio": 0.2,
+      "test_ratio": 0.0,
+      "stratify": true
+    },
+    "training": {
+      "batch_size": 32,
+      "num_epochs": 100,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "early_stopping_patience": 15,
+      "save_best_only": true,
+      "gradient_clip_norm": 1.0,
+      "validate_every": 1,
+      "save_every": 10
+    },
+    "evaluation": {
+      "metrics": [
+        "top1_accuracy",
+        "top3_accuracy",
+        "confusion_matrix"
+      ],
+      "save_predictions": true,
+      "save_probabilities": false
+    },
+    "logging": {
+      "level": "INFO",
+      "save_logs": true,
+      "log_dir": "results/logs",
+      "experiment_name": null
+    },
+    "wandb": {
+      "project": "singer_classification",
+      "entity": null,
+      "log_model": false,
+      "log_gradients": false,
+      "log_freq": 10
+    },
+    "device": {
+      "use_cuda": "auto",
+      "device_id": 0,
+      "num_workers": 2,
+      "pin_memory": true,
+      "force_cpu": false
+    },
+    "paths": {
+      "checkpoints": "results/checkpoints",
+      "predictions": "results/predictions",
+      "visualizations": "results/visualizations",
+      "processed_data": "data/processed",
+      "features": "data/processed/features"
+    },
+    "reproducibility": {
+      "deterministic": true,
+      "benchmark": false,
+      "set_seed_everywhere": true
+    },
+    "defaults": [
+      "/base_config"
+    ],
+    "experiment": {
+      "type": "deep_learning",
+      "name": "baseline_cnn",
+      "description": "Baseline CNN for end-to-end audio classification",
+      "config_path": "configs/deep_learning/baseline_config.yaml"
+    },
+    "model": {
+      "name": "baseline_cnn",
+      "input": {
+        "type": "mel_spectrogram",
+        "n_mels": 128,
+        "n_fft": 2048,
+        "hop_length": 512,
+        "max_length": 1876
+      },
+      "cnn": {
+        "conv_layers": [
+          {
+            "filters": 32,
+            "kernel_size": [
+              3,
+              3
+            ],
+            "stride": [
+              1,
+              1
+            ],
+            "padding": "same",
+            "activation": "relu",
+            "batch_norm": true,
+            "dropout": 0.1
+          },
+          {
+            "filters": 64,
+            "kernel_size": [
+              3,
+              3
+            ],
+            "stride": [
+              2,
+              2
+            ],
+            "padding": "same",
+            "activation": "relu",
+            "batch_norm": true,
+            "dropout": 0.1
+          },
+          {
+            "filters": 128,
+            "kernel_size": [
+              3,
+              3
+            ],
+            "stride": [
+              2,
+              2
+            ],
+            "padding": "same",
+            "activation": "relu",
+            "batch_norm": true,
+            "dropout": 0.2
+          },
+          {
+            "filters": 256,
+            "kernel_size": [
+              3,
+              3
+            ],
+            "stride": [
+              2,
+              2
+            ],
+            "padding": "same",
+            "activation": "relu",
+            "batch_norm": true,
+            "dropout": 0.2
+          }
+        ],
+        "global_pooling": "avg",
+        "fc_layers": [
+          {
+            "units": 512,
+            "activation": "relu",
+            "dropout": 0.5,
+            "batch_norm": true
+          },
+          {
+            "units": 256,
+            "activation": "relu",
+            "dropout": 0.3,
+            "batch_norm": true
+          }
+        ],
+        "output_activation": null
+      }
+    },
+    "data_augmentation": {
+      "enabled": true,
+      "time_domain": {
+        "time_shift": {
+          "enabled": true,
+          "max_shift": 0.1
+        },
+        "speed_perturbation": {
+          "enabled": false,
+          "factors": [
+            0.9,
+            1.1
+          ]
+        }
+      },
+      "frequency_domain": {
+        "freq_mask": {
+          "enabled": true,
+          "max_mask_pct": 0.1,
+          "num_masks": 2
+        },
+        "time_mask": {
+          "enabled": true,
+          "max_mask_pct": 0.1,
+          "num_masks": 2
+        },
+        "mixup": {
+          "enabled": false,
+          "alpha": 0.2
+        }
+      }
+    },
+    "optimizer": {
+      "name": "adam",
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "alternatives": {
+        "sgd": {
+          "momentum": 0.9,
+          "nesterov": true
+        },
+        "adamw": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08
+        }
+      }
+    },
+    "lr_scheduler": {
+      "name": "reduce_on_plateau",
+      "reduce_on_plateau": {
+        "mode": "max",
+        "factor": 0.5,
+        "patience": 5,
+        "min_lr": 1e-06,
+        "verbose": true
+      },
+      "alternatives": {
+        "cosine_annealing": {
+          "T_max": 50,
+          "eta_min": 1e-06
+        },
+        "step_lr": {
+          "step_size": 30,
+          "gamma": 0.1
+        }
+      }
+    },
+    "loss": {
+      "name": "cross_entropy",
+      "label_smoothing": 0.0,
+      "alternatives": {
+        "focal_loss": {
+          "alpha": 1.0,
+          "gamma": 2.0
+        }
+      }
+    },
+    "compile": {
+      "enabled": false,
+      "mode": "default"
+    },
+    "mixed_precision": {
+      "enabled": false,
+      "dtype": "float16"
+    }
+  },
+  "log_directory": "results\\logs\\simple_test",
+  "final_metrics": {
+    "loss": 1.5,
+    "accuracy": 0.7
+  }
+}

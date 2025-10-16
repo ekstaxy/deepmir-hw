@@ -35,12 +35,12 @@ venv/
 env/
 
 # Inference pipeline
-inference_pipeline/
-inference_pipeline/model/ckpt/
+HW1/inference_pipeline/
+HW1/inference_pipeline/model/ckpt/
 
 # Dataset files (to avoid license issues)
-data/raw/
-data/processed/
+HW1/data/raw/
+HW1/data/processed/
 *.mp3
 *.wav
 *.flac
