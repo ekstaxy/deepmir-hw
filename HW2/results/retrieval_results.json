@@ -1,0 +1,128 @@
+{
+  "10_country_114_beat_4-4": [
+    {
+      "reference": "185_reggae_78_fill_4-4",
+      "similarity_score": 0.1496143490076065
+    },
+    {
+      "reference": "186_reggae_78_fill_4-4",
+      "similarity_score": 0.14749541878700256
+    },
+    {
+      "reference": "29_latin-samba_116_fill_4-4",
+      "similarity_score": 0.14191578328609467
+    }
+  ],
+  "4_jazz_120_beat_3-4": [
+    {
+      "reference": "76_jazz-mediumfast_180_beat_4-4",
+      "similarity_score": 0.1816226691007614
+    },
+    {
+      "reference": "77_jazz-mediumfast_180_beat_4-4",
+      "similarity_score": 0.1783750355243683
+    },
+    {
+      "reference": "185_reggae_78_fill_4-4",
+      "similarity_score": 0.17017599940299988
+    }
+  ],
+  "6_rock_102_beat_3-4": [
+    {
+      "reference": "176_afrocuban_105_beat_4-4",
+      "similarity_score": 0.14368650317192078
+    },
+    {
+      "reference": "1_funk_80_beat_4-4",
+      "similarity_score": 0.1422397792339325
+    },
+    {
+      "reference": "2_funk_80_beat_4-4",
+      "similarity_score": 0.13986742496490479
+    }
+  ],
+  "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": [
+    {
+      "reference": "鄉歌",
+      "similarity_score": 0.12067577987909317
+    },
+    {
+      "reference": "愁空山  第1樂章  賴苡鈞演奏  陳志昇指揮（交響）",
+      "similarity_score": 0.11876147240400314
+    },
+    {
+      "reference": "雲南山歌",
+      "similarity_score": 0.1173444390296936
+    }
+  ],
+  "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": [
+    {
+      "reference": "MIDI-Unprocessed_XP_21_R1_2004_03_ORIG_MID--AUDIO_21_R1_2004_04_Track04_wav",
+      "similarity_score": 0.15435197949409485
+    },
+    {
+      "reference": "MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_09_Track09_wav",
+      "similarity_score": 0.13080239295959473
+    },
+    {
+      "reference": "MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav",
+      "similarity_score": 0.12975628674030304
+    }
+  ],
+  "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": [
+    {
+      "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav",
+      "similarity_score": 0.13926461338996887
+    },
+    {
+      "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_10_Track10_wav",
+      "similarity_score": 0.13070182502269745
+    },
+    {
+      "reference": "MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_03_Track03_wav--1",
+      "similarity_score": 0.122734434902668
+    }
+  ],
+  "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": [
+    {
+      "reference": "MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav",
+      "similarity_score": 0.12208741903305054
+    },
+    {
+      "reference": "MIDI-Unprocessed_XP_21_R1_2004_03_ORIG_MID--AUDIO_21_R1_2004_04_Track04_wav",
+      "similarity_score": 0.10862971842288971
+    },
+    {
+      "reference": "MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_04_Track04_wav",
+      "similarity_score": 0.10658259689807892
+    }
+  ],
+  "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": [
+    {
+      "reference": "元若藍-愛X無限大-03.綠柚子",
+      "similarity_score": 0.11340431869029999
+    },
+    {
+      "reference": "鄉歌",
+      "similarity_score": 0.11227530241012573
+    },
+    {
+      "reference": "雲南山歌",
+      "similarity_score": 0.11066145449876785
+    }
+  ],
+  "竹笛｜这世界那么多人_cover 莫文蔚_60s": [
+    {
+      "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav",
+      "similarity_score": 0.11520301550626755
+    },
+    {
+      "reference": "漁舟唱晚 (笛)",
+      "similarity_score": 0.1143837571144104
+    },
+    {
+      "reference": "收割",
+      "similarity_score": 0.10752774775028229
+    }
+  ]
+}
