@@ -37,21 +37,25 @@ def load_evaluation_data(retrieval_json_path, data_dir="HW2/data"):
             print(f"Warning: Target file not found: {target_name} (.wav or .mp3)")
             continue
 
-        # Get top match (or iterate through all matches if needed)
-        for match in matches:
-            reference_name = match["reference"]
-            similarity_score = match["similarity_score"]
+        # Get only the top match (highest similarity score)
+        if not matches or len(matches) == 0:
+            print(f"Warning: No matches found for {target_name}")
+            continue
 
-            # Find reference audio file (try .wav first, then .mp3)
-            reference_path = reference_dir / f"{reference_name}.wav"
-            if not reference_path.exists():
-                reference_path = reference_dir / f"{reference_name}.mp3"
+        top_match = matches[0]  # First match has highest score
+        reference_name = top_match["reference"]
+        similarity_score = top_match["similarity_score"]
 
-            if not reference_path.exists():
-                print(f"Warning: Reference file not found: {reference_name} (.wav or .mp3)")
-                continue
+        # Find reference audio file (try .wav first, then .mp3)
+        reference_path = reference_dir / f"{reference_name}.wav"
+        if not reference_path.exists():
+            reference_path = reference_dir / f"{reference_name}.mp3"
 
-            audio_pairs.append((target_path, reference_path, similarity_score))
+        if not reference_path.exists():
+            print(f"Warning: Reference file not found: {reference_name} (.wav or .mp3)")
+            continue
+
+        audio_pairs.append((target_path, reference_path, similarity_score))
 
     print(f"Loaded {len(audio_pairs)} audio pairs for evaluation.")
     return audio_pairs
