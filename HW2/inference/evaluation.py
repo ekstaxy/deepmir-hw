@@ -63,21 +63,27 @@ def evaluate_aesthetic_scores(audio_pairs):
     results = []
     predictor = initialize_predictor()
 
-    for target_path, reference_path, similarity_score in audio_pairs:
-        # Load audio files
-        target_audio, _ = torchaudio.load(target_path)
-        reference_audio, _ = torchaudio.load(reference_path)
+    for i, (target_path, reference_path, similarity_score) in enumerate(audio_pairs, 1):
+        print(f"  [{i}/{len(audio_pairs)}] Evaluating {target_path.name}...")
 
-        # Get aesthetic scores
-        target_score = predictor(target_audio)
-        reference_score = predictor(reference_audio)
+        # Load audio files
+        target_audio, target_sr = torchaudio.load(target_path)
+        reference_audio, reference_sr = torchaudio.load(reference_path)
+
+        # Get aesthetic scores using forward() method with proper format
+        target_scores = predictor.forward([{"path": target_audio, "sample_rate": target_sr}])
+        reference_scores = predictor.forward([{"path": reference_audio, "sample_rate": reference_sr}])
+
+        # Extract first result (since we only pass one audio at a time)
+        target_aesthetic = target_scores[0] if isinstance(target_scores, list) else target_scores
+        reference_aesthetic = reference_scores[0] if isinstance(reference_scores, list) else reference_scores
 
         results.append({
             "target": target_path.name,
             "reference": reference_path.name,
             "similarity_score": similarity_score,
-            "target_aesthetic": target_score,
-            "reference_aesthetic": reference_score
+            "target_aesthetic": target_aesthetic,
+            "reference_aesthetic": reference_aesthetic
         })
 
     return results
