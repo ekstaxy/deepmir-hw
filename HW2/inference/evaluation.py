@@ -152,85 +152,25 @@ def evaluate_folder(predictor, folder_path, output_filename="aesthetic_evaluatio
         return None
 
 def main():
-    import argparse
-    
-    parser = argparse.ArgumentParser(
-        description="Evaluate aesthetic scores for all audio files in multiple folders"
-    )
-    parser.add_argument(
-        "top_dir",
-        type=str,
-        help="Top-level directory containing folders with audio files"
-    )
-    parser.add_argument(
-        "--output-filename",
-        type=str,
-        default="aesthetic_evaluation.json",
-        help="Name of output JSON file for each folder (default: aesthetic_evaluation.json)"
-    )
-    parser.add_argument(
-        "--recursive",
-        action="store_true",
-        help="Search recursively for folders with audio files"
-    )
-    
-    args = parser.parse_args()
+    top_dir = "HW2/results/musicgen-small_generated_music"  # Change this to your folder path
     
     print("="*80)
     print("AESTHETIC EVALUATION OF AUDIO FILES")
     print("="*80)
-    print(f"Top directory: {args.top_dir}")
-    print(f"Output filename: {args.output_filename}")
-    print(f"Recursive search: {args.recursive}")
     
     # Initialize predictor once
     print("\nInitializing aesthetic predictor...")
     predictor = initialize_predictor()
     print("✓ Predictor initialized")
     
-    # Find all folders with audio files
-    if args.recursive:
-        audio_folders = find_audio_folders(args.top_dir)
-    else:
-        # Only look at immediate subdirectories
-        top_path = Path(args.top_dir)
-        audio_folders = [f for f in top_path.iterdir() if f.is_dir()]
-        audio_folders = [f for f in audio_folders if get_audio_files(f)]
+    # Evaluate the single folder
+    folder = Path(top_dir)
+    summary = evaluate_folder(predictor, folder, "aesthetic_evaluation.json")
     
-    if not audio_folders:
-        print(f"\n✗ No folders with audio files found in {args.top_dir}")
-        return
-    
-    print(f"\nFound {len(audio_folders)} folders with audio files")
-    
-    # Evaluate each folder
-    all_summaries = []
-    for i, folder in enumerate(audio_folders, 1):
-        print(f"\n[{i}/{len(audio_folders)}] Processing: {folder.name}")
-        print("-" * 80)
-        
-        summary = evaluate_folder(predictor, folder, args.output_filename)
-        if summary:
-            all_summaries.append(summary)
-    
-    # Save overall summary
-    if all_summaries:
-        overall_summary_path = Path(args.top_dir) / "overall_aesthetic_summary.json"
-        overall_summary = {
-            "total_folders_evaluated": len(all_summaries),
-            "total_files_evaluated": sum(s["successful_evaluations"] for s in all_summaries),
-            "folders": all_summaries
-        }
-        
-        with open(overall_summary_path, 'w', encoding='utf-8') as f:
-            json.dump(overall_summary, f, indent=2, ensure_ascii=False)
-        
+    if summary:
         print("\n" + "="*80)
         print("✅ EVALUATION COMPLETE!")
         print("="*80)
-        print(f"Total folders evaluated: {len(all_summaries)}")
-        print(f"Total files evaluated: {overall_summary['total_files_evaluated']}")
-        print(f"Overall summary saved to: {overall_summary_path}")
     else:
         print("\n✗ No successful evaluations completed")
 
