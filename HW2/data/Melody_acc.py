@@ -10,7 +10,8 @@ def extract_melody_one_hot(audio_path,
                            sr=44100,
                            cutoff=261.2, 
                            win_length=2048,
-                           hop_length=256):
+                           hop_length=256,
+                           max_duration=None):
     """Extract a one-hot chromagram-based melody from an audio file."""
     audio, in_sr = torchaudio.load(str(audio_path))
     audio_mono = audio.mean(dim=0)
@@ -18,6 +19,11 @@ def extract_melody_one_hot(audio_path,
     if in_sr != sr:
         resample_tf = T.Resample(orig_freq=in_sr, new_freq=sr)
         audio_mono = resample_tf(audio_mono)
+
+    # Trim to max_duration if specified
+    if max_duration is not None:
+        max_samples = int(max_duration * sr)
+        audio_mono = audio_mono[:max_samples]
 
     y = audio_mono.numpy()
 
@@ -41,10 +47,10 @@ def extract_melody_one_hot(audio_path,
     return one_hot_chroma
 
 
-def calculate_melody_accuracy(target_path, generated_path):
+def calculate_melody_accuracy(target_path, generated_path, max_duration=None):
     """Calculate melody accuracy between two audio files."""
-    gt_melody = extract_melody_one_hot(target_path)      
-    gen_melody = extract_melody_one_hot(generated_path)
+    gt_melody = extract_melody_one_hot(target_path, max_duration=max_duration)      
+    gen_melody = extract_melody_one_hot(generated_path, max_duration=max_duration)
     
     min_len_melody = min(gen_melody.shape[1], gt_melody.shape[1])
     matches = ((gen_melody[:, :min_len_melody] == gt_melody[:, :min_len_melody]) & 
@@ -57,28 +63,23 @@ def calculate_melody_accuracy(target_path, generated_path):
 def normalize_filename(filename):
     """Normalize filename by removing duplicate extensions."""
     name = filename
-    # Keep removing extensions until no more to remove
     while True:
         stem = Path(name).stem
-        if stem == name:  # No extension removed
+        if stem == name:
             break
         name = stem
     return name
 
 
 def find_audio_file(folder, target_name):
-    """Find audio file in folder matching the name (handles duplicate extensions)."""
+    """Find audio file in folder matching the name."""
     folder = Path(folder)
-    
-    # Normalize target name
     normalized_target = normalize_filename(target_name)
     
-    # Get all audio files
     audio_files = []
     for ext in ['.wav', '.mp3', '.flac', '.m4a', '.ogg']:
         audio_files.extend(folder.glob(f'*{ext}'))
     
-    # Try to find match by normalizing each file's name
     for audio_file in audio_files:
         normalized_name = normalize_filename(audio_file.name)
         if normalized_name == normalized_target:
@@ -87,24 +88,21 @@ def find_audio_file(folder, target_name):
     return None
 
 
-def evaluate_folder(target_folder, generated_folder):
-    """Evaluate melody accuracy for one generated folder."""
+def evaluate_folder(target_folder, generated_folder, duration_sec):
+    """Evaluate melody accuracy for one folder at specific duration."""
     target_path = Path(target_folder)
     generated_path = Path(generated_folder)
     
     results = {}
     
-    # Get all audio files from target folder
     target_files = []
     for ext in ['.wav', '.mp3', '.flac', '.m4a', '.ogg']:
         target_files.extend(target_path.glob(f'*{ext}'))
     
-    print(f"\nProcessing: {generated_path.name}")
+    print(f"\nProcessing {duration_sec}s: {generated_path.name}")
     
     for target_file in target_files:
-        # Normalize the target filename
         normalized_name = normalize_filename(target_file.name)
-        
         generated_file = find_audio_file(generated_path, normalized_name)
         
         if generated_file is None:
@@ -113,15 +111,14 @@ def evaluate_folder(target_folder, generated_folder):
             continue
         
         try:
-            accuracy = calculate_melody_accuracy(target_file, generated_file)
+            accuracy = calculate_melody_accuracy(target_file, generated_file, max_duration=duration_sec)
             results[normalized_name] = accuracy
             print(f"  {normalized_name}: {accuracy:.4f}")
         except Exception as e:
             print(f"  Error {normalized_name}: {e}")
             results[normalized_name] = None
     
-    # Save results
-    output_path = generated_path / "melody_accuracy.json"
+    output_path = generated_path / f"melody_accuracy_{duration_sec}s.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     
@@ -130,34 +127,22 @@ def evaluate_folder(target_folder, generated_folder):
 
 
 def main():
-    import argparse
+    target_folder = "HW2/data/target_music_list_60s"
+    generated_folder = "HW2/results/musicgen-small_generated_music"  # Change this
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--target", default="HW2/data/target_music_list_60s", help="Target audio folder")
-    parser.add_argument("--generated", default="HW2/results/musicControlLite_generated_music", help="Top directory with generated folders")
-    args = parser.parse_args()
-    
-    target_path = Path(args.target)
-    generated_top_path = Path(args.generated)
-    
-    # Find all subdirectories
-    generated_folders = [f for f in generated_top_path.iterdir() if f.is_dir()]
+    target_path = Path(target_folder)
+    generated_path = Path(generated_folder)
     
     print(f"Target folder: {target_path}")
-    print(f"Found {len(generated_folders)} folders")
+    print(f"Generated folder: {generated_path}")
     
-    all_results = {}
+    # Evaluate for 30s
+    evaluate_folder(target_path, generated_path, duration_sec=30)
     
-    for folder in generated_folders:
-        results = evaluate_folder(target_path, folder)
-        all_results[folder.name] = results
+    # Evaluate for 60s
+    evaluate_folder(target_path, generated_path, duration_sec=60)
     
-    # Save overall results
-    overall_path = generated_top_path / "all_melody_accuracy.json"
-    with open(overall_path, 'w', encoding='utf-8') as f:
-        json.dump(all_results, f, indent=2, ensure_ascii=False)
-    
-    print(f"\n✓ Overall results: {overall_path}")
+    print(f"\n✓ Done")
 
 
 if __name__ == "__main__":

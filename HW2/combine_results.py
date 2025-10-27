@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
 
-def combine_json_files(folder_path):
+def combine_json_files(folder_path, duration_sec=60):
     """Combine aesthetic and melody accuracy JSON files in a folder."""
     folder = Path(folder_path)
     
     aesthetic_file = folder / "aesthetic_evaluation.json"
-    melody_file = folder / "melody_accuracy.json"
+    melody_file = folder / f"melody_accuracy_{duration_sec}s.json"
     
     # Load both JSON files
     with open(aesthetic_file, 'r', encoding='utf-8') as f:
@@ -37,22 +37,24 @@ def combine_json_files(folder_path):
         })
     
     # Save combined results
-    output_file = folder / "combined_evaluation.json"
+    output_file = folder / f"combined_evaluation_{duration_sec}s.json"
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(combined, f, indent=2, ensure_ascii=False)
     
-    print(f"✓ {folder.name}")
+    print(f"✓ {folder.name} - {duration_sec}s")
 
 
 def main():
-    top_dir = Path("HW2/results/musicControlLite_generated_music")
+    # Single folder mode
+    folder = Path("HW2/results/musicgen-small_generated_music")  # Change this
     
-    folders = [f for f in top_dir.iterdir() if f.is_dir()]
+    # Combine 30s
+    combine_json_files(folder, duration_sec=30)
     
-    for folder in folders:
-        combine_json_files(folder)
+    # Combine 60s
+    combine_json_files(folder, duration_sec=60)
     
-    print(f"\n✓ Combined {len(folders)} folders")
+    print(f"\n✓ Done")
 
 
 if __name__ == "__main__":

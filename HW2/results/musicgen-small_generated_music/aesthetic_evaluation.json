@@ -1,0 +1,132 @@
+{
+  "folder": "results/musicgen-small_generated_music",
+  "total_files": 9,
+  "successful_evaluations": 9,
+  "failed_evaluations": 0,
+  "statistics": {
+    "mean_aesthetic_score": 6.342552403608958,
+    "median_aesthetic_score": 6.314413547515869,
+    "std_aesthetic_score": 0.2768190493594929,
+    "min_aesthetic_score": 5.826359987258911,
+    "max_aesthetic_score": 6.687014222145081
+  },
+  "files": [
+    {
+      "filename": "10_country_114_beat_4-4.mp3",
+      "aesthetic_score": 6.687014222145081,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.531735420227051,
+        "CU": 7.498290061950684,
+        "PC": 5.453726291656494,
+        "PQ": 7.264305114746094
+      }
+    },
+    {
+      "filename": "4_jazz_120_beat_3-4.mp3",
+      "aesthetic_score": 6.314413547515869,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.481096267700195,
+        "CU": 7.41932487487793,
+        "PC": 4.065055847167969,
+        "PQ": 7.292177200317383
+      }
+    },
+    {
+      "filename": "6_rock_102_beat_3-4.mp3",
+      "aesthetic_score": 6.618516206741333,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.94126033782959,
+        "CU": 7.966749668121338,
+        "PC": 4.03221321105957,
+        "PQ": 7.533841609954834
+      }
+    },
+    {
+      "filename": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s.mp3.mp3",
+      "aesthetic_score": 5.826359987258911,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.100307941436768,
+        "CU": 7.266226768493652,
+        "PC": 2.9544506072998047,
+        "PQ": 6.98445463180542
+      }
+    },
+    {
+      "filename": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s.mp3.mp3",
+      "aesthetic_score": 6.159057021141052,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.218451499938965,
+        "CU": 7.6662116050720215,
+        "PC": 3.1268763542175293,
+        "PQ": 7.624688625335693
+      }
+    },
+    {
+      "filename": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s.mp3.mp3",
+      "aesthetic_score": 6.594305217266083,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.473052024841309,
+        "CU": 7.771237850189209,
+        "PC": 3.5881669521331787,
+        "PQ": 7.544764041900635
+      }
+    },
+    {
+      "filename": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】.mp3.mp3",
+      "aesthetic_score": 6.259247124195099,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.811033725738525,
+        "CU": 7.367721080780029,
+        "PC": 3.611846685409546,
+        "PQ": 7.246387004852295
+      }
+    },
+    {
+      "filename": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s.mp3.mp3",
+      "aesthetic_score": 6.558757305145264,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.458420276641846,
+        "CU": 7.386840343475342,
+        "PC": 5.208681106567383,
+        "PQ": 7.181087493896484
+      }
+    },
+    {
+      "filename": "竹笛｜这世界那么多人_cover 莫文蔚_60s.mp3.mp3",
+      "aesthetic_score": 6.06530100107193,
+      "duration_seconds": 59.88,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.3225626945495605,
+        "CU": 7.10028076171875,
+        "PC": 3.6725637912750244,
+        "PQ": 7.165796756744385
+      }
+    }
+  ]
+}
