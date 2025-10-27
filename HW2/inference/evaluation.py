@@ -6,120 +6,225 @@ import numpy as np
 import torch
 import torchaudio
 from audiobox_aesthetics.infer import initialize_predictor
+from tqdm import tqdm
 
-def load_evaluation_data(retrieval_json_path, data_dir="HW2/data"):
-    """Load audio pairs based on retrieval_results.json
-
+def find_audio_folders(top_dir):
+    """Find all folders containing audio files under top directory
+    
     Args:
-        retrieval_json_path: Path to the retrieval_results.json file
-        data_dir: Base directory containing audio files
-
+        top_dir: Top-level directory to search
+        
     Returns:
-        List of tuples: [(target_path, reference_path, similarity_score), ...]
+        List of Path objects for folders containing audio files
     """
-    # Load retrieval results
-    with open(retrieval_json_path, 'r', encoding='utf-8') as f:
-        retrieval_results = json.load(f)
+    top_path = Path(top_dir)
+    audio_folders = []
+    
+    # Walk through directory tree
+    for folder in top_path.rglob('*'):
+        if folder.is_dir():
+            # Check if folder contains any audio files
+            audio_files = list(folder.glob('*.mp3')) + list(folder.glob('*.wav'))
+            if audio_files:
+                audio_folders.append(folder)
+    
+    return audio_folders
 
-    data_path = Path(data_dir)
-    target_dir = data_path / "target_music_list_60s"
-    reference_dir = data_path / "reference_music_list_60s"
-
-    audio_pairs = []
-
-    for target_name, matches in retrieval_results.items():
-        # Find target audio file (try .wav first, then .mp3)
-        target_path = target_dir / f"{target_name}.wav"
-        if not target_path.exists():
-            target_path = target_dir / f"{target_name}.mp3"
-
-        if not target_path.exists():
-            print(f"Warning: Target file not found: {target_name} (.wav or .mp3)")
-            continue
-
-        # Get only the top match (highest similarity score)
-        if not matches or len(matches) == 0:
-            print(f"Warning: No matches found for {target_name}")
-            continue
-
-        top_match = matches[0]  # First match has highest score
-        reference_name = top_match["reference"]
-        similarity_score = top_match["similarity_score"]
-
-        # Find reference audio file (try .wav first, then .mp3)
-        reference_path = reference_dir / f"{reference_name}.wav"
-        if not reference_path.exists():
-            reference_path = reference_dir / f"{reference_name}.mp3"
-
-        if not reference_path.exists():
-            print(f"Warning: Reference file not found: {reference_name} (.wav or .mp3)")
-            continue
-
-        audio_pairs.append((target_path, reference_path, similarity_score))
-
-    print(f"Loaded {len(audio_pairs)} audio pairs for evaluation.")
-    return audio_pairs
-
-def evaluate_aesthetic_scores(audio_pairs):
-    """Evaluate aesthetic scores for given audio pairs
-
+def get_audio_files(folder_path):
+    """Get all audio files (mp3, wav) in a folder
+    
     Args:
-        audio_pairs: List of tuples: [(target_path, reference_path, similarity_score), ...]
+        folder_path: Path to folder
+        
     Returns:
-        List of dicts with evaluation results
+        List of audio file paths
     """
+    folder = Path(folder_path)
+    audio_files = []
+    
+    # Get all mp3 files
+    audio_files.extend(folder.glob('*.mp3'))
+    # Get all wav files
+    audio_files.extend(folder.glob('*.wav'))
+    
+    return sorted(audio_files)
+
+def evaluate_audio_file(predictor, audio_path):
+    """Evaluate aesthetic score for a single audio file
+    
+    Args:
+        predictor: Initialized aesthetic predictor
+        audio_path: Path to audio file
+        
+    Returns:
+        dict with evaluation results or None if error
+    """
+    try:
+        # Load audio file
+        audio, sr = torchaudio.load(audio_path)
+        
+        # Get aesthetic score
+        scores = predictor.forward([{"path": audio, "sample_rate": sr}])
+        aesthetic_score = scores[0] if isinstance(scores, list) else scores
+        
+        return {
+            "filename": audio_path.name,
+            "aesthetic_score": float(aesthetic_score),
+            "duration_seconds": audio.shape[1] / sr,
+            "sample_rate": sr,
+            "channels": audio.shape[0]
+        }
+    except Exception as e:
+        print(f"    ✗ Error evaluating {audio_path.name}: {str(e)}")
+        return None
+
+def evaluate_folder(predictor, folder_path, output_filename="aesthetic_evaluation.json"):
+    """Evaluate all audio files in a folder and save results
+    
+    Args:
+        predictor: Initialized aesthetic predictor
+        folder_path: Path to folder containing audio files
+        output_filename: Name of output JSON file
+        
+    Returns:
+        dict with summary statistics
+    """
+    folder = Path(folder_path)
+    audio_files = get_audio_files(folder)
+    
+    if not audio_files:
+        print(f"  ⚠ No audio files found in {folder}")
+        return None
+    
+    print(f"\n  Processing folder: {folder.name}")
+    print(f"  Found {len(audio_files)} audio files")
+    
     results = []
-    predictor = initialize_predictor()
-
-    for i, (target_path, reference_path, similarity_score) in enumerate(audio_pairs, 1):
-        print(f"  [{i}/{len(audio_pairs)}] Evaluating {target_path.name}...")
-
-        # Load audio files
-        target_audio, target_sr = torchaudio.load(target_path)
-        reference_audio, reference_sr = torchaudio.load(reference_path)
-
-        # Get aesthetic scores using forward() method with proper format
-        target_scores = predictor.forward([{"path": target_audio, "sample_rate": target_sr}])
-        reference_scores = predictor.forward([{"path": reference_audio, "sample_rate": reference_sr}])
-
-        # Extract first result (since we only pass one audio at a time)
-        target_aesthetic = target_scores[0] if isinstance(target_scores, list) else target_scores
-        reference_aesthetic = reference_scores[0] if isinstance(reference_scores, list) else reference_scores
-
-        results.append({
-            "target": target_path.name,
-            "reference": reference_path.name,
-            "similarity_score": similarity_score,
-            "target_aesthetic": target_aesthetic,
-            "reference_aesthetic": reference_aesthetic
-        })
-
-    return results
+    successful = 0
+    failed = 0
+    
+    # Evaluate each audio file
+    for audio_file in tqdm(audio_files, desc=f"  Evaluating", unit="file"):
+        result = evaluate_audio_file(predictor, audio_file)
+        if result:
+            results.append(result)
+            successful += 1
+        else:
+            failed += 1
+    
+    # Calculate statistics
+    if results:
+        aesthetic_scores = [r["aesthetic_score"] for r in results]
+        summary = {
+            "folder": str(folder.relative_to(folder.parent.parent)),
+            "total_files": len(audio_files),
+            "successful_evaluations": successful,
+            "failed_evaluations": failed,
+            "statistics": {
+                "mean_aesthetic_score": float(np.mean(aesthetic_scores)),
+                "median_aesthetic_score": float(np.median(aesthetic_scores)),
+                "std_aesthetic_score": float(np.std(aesthetic_scores)),
+                "min_aesthetic_score": float(np.min(aesthetic_scores)),
+                "max_aesthetic_score": float(np.max(aesthetic_scores))
+            },
+            "files": results
+        }
+        
+        # Save results to folder
+        output_path = folder / output_filename
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+        
+        print(f"  ✓ Results saved to: {output_path}")
+        print(f"  ✓ Mean aesthetic score: {summary['statistics']['mean_aesthetic_score']:.4f}")
+        
+        return summary
+    else:
+        print(f"  ✗ No successful evaluations in {folder}")
+        return None
 
 def main():
-    # Define paths
-    retrieval_json_path = "HW2/results/retrieval_results.json"
-    output_path = "HW2/results/aesthetic_evaluation_results.json"
-
-    print("="*60)
-    print("AESTHETIC EVALUATION OF RETRIEVED AUDIO PAIRS")
-    print("="*60)
-
-    # Load evaluation data
-    audio_pairs = load_evaluation_data(retrieval_json_path)
-
-    # Evaluate aesthetic scores
-    print("\nEvaluating aesthetic scores...")
-    evaluation_results = evaluate_aesthetic_scores(audio_pairs)
-
-    # Save results to JSON
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(evaluation_results, f, indent=2, ensure_ascii=False)
-    print(f"\n✓ Evaluation results saved to: {output_path}")
-
-    print("\n" + "="*60)
-    print("✅ AESTHETIC EVALUATION COMPLETE!")
-    print("="*60)
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Evaluate aesthetic scores for all audio files in multiple folders"
+    )
+    parser.add_argument(
+        "top_dir",
+        type=str,
+        help="Top-level directory containing folders with audio files"
+    )
+    parser.add_argument(
+        "--output-filename",
+        type=str,
+        default="aesthetic_evaluation.json",
+        help="Name of output JSON file for each folder (default: aesthetic_evaluation.json)"
+    )
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Search recursively for folders with audio files"
+    )
+    
+    args = parser.parse_args()
+    
+    print("="*80)
+    print("AESTHETIC EVALUATION OF AUDIO FILES")
+    print("="*80)
+    print(f"Top directory: {args.top_dir}")
+    print(f"Output filename: {args.output_filename}")
+    print(f"Recursive search: {args.recursive}")
+    
+    # Initialize predictor once
+    print("\nInitializing aesthetic predictor...")
+    predictor = initialize_predictor()
+    print("✓ Predictor initialized")
+    
+    # Find all folders with audio files
+    if args.recursive:
+        audio_folders = find_audio_folders(args.top_dir)
+    else:
+        # Only look at immediate subdirectories
+        top_path = Path(args.top_dir)
+        audio_folders = [f for f in top_path.iterdir() if f.is_dir()]
+        audio_folders = [f for f in audio_folders if get_audio_files(f)]
+    
+    if not audio_folders:
+        print(f"\n✗ No folders with audio files found in {args.top_dir}")
+        return
+    
+    print(f"\nFound {len(audio_folders)} folders with audio files")
+    
+    # Evaluate each folder
+    all_summaries = []
+    for i, folder in enumerate(audio_folders, 1):
+        print(f"\n[{i}/{len(audio_folders)}] Processing: {folder.name}")
+        print("-" * 80)
+        
+        summary = evaluate_folder(predictor, folder, args.output_filename)
+        if summary:
+            all_summaries.append(summary)
+    
+    # Save overall summary
+    if all_summaries:
+        overall_summary_path = Path(args.top_dir) / "overall_aesthetic_summary.json"
+        overall_summary = {
+            "total_folders_evaluated": len(all_summaries),
+            "total_files_evaluated": sum(s["successful_evaluations"] for s in all_summaries),
+            "folders": all_summaries
+        }
+        
+        with open(overall_summary_path, 'w', encoding='utf-8') as f:
+            json.dump(overall_summary, f, indent=2, ensure_ascii=False)
+        
+        print("\n" + "="*80)
+        print("✅ EVALUATION COMPLETE!")
+        print("="*80)
+        print(f"Total folders evaluated: {len(all_summaries)}")
+        print(f"Total files evaluated: {overall_summary['total_files_evaluated']}")
+        print(f"Overall summary saved to: {overall_summary_path}")
+    else:
+        print("\n✗ No successful evaluations completed")
 
 if __name__ == "__main__":
     main()
