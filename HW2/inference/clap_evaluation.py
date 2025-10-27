@@ -145,8 +145,8 @@ def evaluate_clap(input1, input2):
             except Exception as e:
                 print(f"  Error {normalized_name}: {e}")
                 results[normalized_name] = None
-        
-        output_path = text_json_path.parent / "clap_text_audio_similarities.json"
+
+        output_path = audio_folder / "clap_text_audio_similarities.json"
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     input_1_path = [
         "HW2/results/musicgen-small_generated_music", 
-        "HW2/results/flamingo3_audio_captioning.json",
+        # "HW2/results/flamingo3_audio_captioning.json",
         "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_0_guidance",
         "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_1_guidance",
         "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_2_guidance",
@@ -168,5 +168,9 @@ if __name__ == "__main__":
     for path in input_1_path:
         evaluate_clap(
             path,
-            "HW2/data/target_music_list_60s"
+            "HW2/results/flamingo3_audio_captioning.json"
         )
+    # evaluate_clap(
+    #     "HW2/results/musicgen-small_generated_music", 
+    #     "HW2/data/target_music_list_60s"
+    # )
