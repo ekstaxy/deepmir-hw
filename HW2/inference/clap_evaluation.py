@@ -9,32 +9,18 @@ def load_clap_model():
     model = msclap.CLAP(version='2023', use_cuda=True)
     return model
 
-def load_audio(audio_path, target_sr=48000, max_duration=None):
-    """Load audio file."""
-    audio, sr = librosa.load(audio_path, sr=target_sr, mono=True)
-    
-    if max_duration is not None:
-        max_samples = int(max_duration * target_sr)
-        audio = audio[:max_samples]
-    
-    return audio, target_sr
-
-def calculate_audio_audio_similarity(model, audio1, audio2):
-    """Calculate similarity between two audio arrays."""
-    min_len = min(len(audio1), len(audio2))
-    audio1 = audio1[:min_len]
-    audio2 = audio2[:min_len]
-    
-    audio1_embed = model.get_audio_embeddings([audio1], resample=False)
-    audio2_embed = model.get_audio_embeddings([audio2], resample=False)
+def calculate_audio_audio_similarity(model, audio_path1, audio_path2):
+    """Calculate similarity between two audio files."""
+    audio1_embed = model.get_audio_embeddings([str(audio_path1)])
+    audio2_embed = model.get_audio_embeddings([str(audio_path2)])
     
     similarity = float(np.dot(audio1_embed[0], audio2_embed[0]))
     return similarity
 
-def calculate_text_audio_similarity(model, text, audio):
-    """Calculate similarity between text and audio."""
+def calculate_text_audio_similarity(model, text, audio_path):
+    """Calculate similarity between text and audio file."""
     text_embed = model.get_text_embeddings([text])
-    audio_embed = model.get_audio_embeddings([audio], resample=False)
+    audio_embed = model.get_audio_embeddings([str(audio_path)])
     
     similarity = float(np.dot(text_embed[0], audio_embed[0]))
     return similarity
@@ -102,10 +88,7 @@ def evaluate_clap(input1, input2):
                 continue
             
             try:
-                audio1, sr = load_audio(audio_file1)
-                audio2, _ = load_audio(audio_file2)
-                
-                similarity = calculate_audio_audio_similarity(model, audio1, audio2)
+                similarity = calculate_audio_audio_similarity(model, audio_file1, audio_file2)
                 results[normalized_name] = similarity
                 print(f"  {normalized_name}: {similarity:.4f}")
                 
@@ -145,8 +128,7 @@ def evaluate_clap(input1, input2):
                 continue
             
             try:
-                audio, sr = load_audio(audio_file)
-                similarity = calculate_text_audio_similarity(model, text_prompt, audio)
+                similarity = calculate_text_audio_similarity(model, text_prompt, audio_file)
                 results[normalized_name] = similarity
                 print(f"  {normalized_name}: {similarity:.4f}")
                 
@@ -162,7 +144,7 @@ def evaluate_clap(input1, input2):
 
 
 if __name__ == "__main__":
-    
+
     input_1_path = [
         "HW2/results/musicgen-small_generated_music", 
         "HW2/results/flamingo3_audio_captioning.json",
