@@ -4,12 +4,12 @@ from pathlib import Path
 import json
 import torchaudio
 from transformers import ClapModel, ClapProcessor
+import msclap
 
 def load_clap_model():
-    """Load CLAP model from Hugging Face."""
-    model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
-    processor = ClapProcessor.from_pretrained("laion/clap-htsat-unfused")
-    return model, processor
+    """Load CLAP model using msclap."""
+    model = msclap.CLAP(version='2023', use_cuda=True)
+    return model
 
 def load_audio(audio_path, target_sr=48000, max_duration=None):
     """Load and preprocess audio file."""
