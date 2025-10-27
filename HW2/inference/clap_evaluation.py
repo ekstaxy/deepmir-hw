@@ -7,8 +7,8 @@ from transformers import ClapModel, ClapProcessor
 
 def load_clap_model():
     """Load CLAP model from Hugging Face."""
-    model = ClapModel.from_pretrained("laion/larger_clap_music")
-    processor = ClapProcessor.from_pretrained("laion/larger_clap_music")
+    model = ClapModel.from_pretrained("laion/larger_clap_music", trust_remote_code=True)
+    processor = ClapProcessor.from_pretrained("laion/larger_clap_music", trust_remote_code=True)
     return model, processor
 
 def load_audio(audio_path, target_sr=48000, max_duration=None):
