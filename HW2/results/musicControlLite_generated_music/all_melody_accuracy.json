@@ -1,0 +1,68 @@
+{
+  "musicControlLite_melody&rythym_generated_1_guidance": {
+    "10_country_114_beat_4-4": 0.3282070059807152,
+    "4_jazz_120_beat_3-4": 0.5764677163432198,
+    "6_rock_102_beat_3-4": 0.2112779201757598,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.7788355913584768,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.7865250823874039,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.6644696692298303,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.7016965702428902,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.7280605394849261,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.8376663005004272
+  },
+  "musicControlLite_melody_generated_0_guidance": {
+    "10_country_114_beat_4-4": 0.09398266813133163,
+    "4_jazz_120_beat_3-4": 0.041498840473575,
+    "6_rock_102_beat_3-4": 0.06029537409984133,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.03893567679726596,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.1277920175759795,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.024289027218357136,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.10692054192603442,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.06810692054192603,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.10643232027340413
+  },
+  "musicControlLite_melody_generated_1_guidance": {
+    "10_country_114_beat_4-4": 0.31795435127547905,
+    "4_jazz_120_beat_3-4": 0.7179299401928475,
+    "6_rock_102_beat_3-4": 0.19480043939948738,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.8624435493714147,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.8177712681557427,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.6886366410350299,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.6793604296350543,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.757597949469059,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.8474307335530331
+  },
+  "musicControlLite_melody_generated_2_guidance": {
+    "10_country_114_beat_4-4": 0.3570120834859026,
+    "4_jazz_120_beat_3-4": 0.655681679482485,
+    "6_rock_102_beat_3-4": 0.24899304284145002,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.8939338459660686,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.8336384718662273,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.7214695471744171,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.69718051995606,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.7787135359453192,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.8593921640424753
+  },
+  "musicControlLite_melody_generated_3_guidance": {
+    "10_country_114_beat_4-4": 0.36079580129378735,
+    "4_jazz_120_beat_3-4": 0.5482729159038203,
+    "6_rock_102_beat_3-4": 0.25704870010984987,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.8883192969608202,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.8347369705846455,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.7027950689613084,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.6958379104113267,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.7845721957768828,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.8632979372635177
+  },
+  "musicControlLite_rythym_generated_1_guidance": {
+    "10_country_114_beat_4-4": 0.07591846698401074,
+    "4_jazz_120_beat_3-4": 0.03625045770779934,
+    "6_rock_102_beat_3-4": 0.06444525814719883,
+    "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s": 0.06810692054192603,
+    "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s": 0.13108751373123398,
+    "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s": 0.0456487245209325,
+    "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】": 0.07945807396558037,
+    "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s": 0.0723788600024411,
+    "竹笛｜这世界那么多人_cover 莫文蔚_60s": 0.1190040278286342
+  }
+}

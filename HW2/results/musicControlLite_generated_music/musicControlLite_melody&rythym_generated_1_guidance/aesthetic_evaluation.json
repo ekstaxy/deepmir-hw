@@ -1,0 +1,132 @@
+{
+  "folder": "musicControlLite_generated_music/musicControlLite_melody&rythym_generated_1_guidance",
+  "total_files": 9,
+  "successful_evaluations": 9,
+  "failed_evaluations": 0,
+  "statistics": {
+    "mean_aesthetic_score": 6.553726315498352,
+    "median_aesthetic_score": 6.8146703243255615,
+    "std_aesthetic_score": 0.53886462362675,
+    "min_aesthetic_score": 5.673242568969727,
+    "max_aesthetic_score": 7.106512546539307
+  },
+  "files": [
+    {
+      "filename": "10_country_114_beat_4-4.mp3",
+      "aesthetic_score": 5.673242568969727,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 5.94810676574707,
+        "CU": 6.7514262199401855,
+        "PC": 4.278464317321777,
+        "PQ": 5.714972972869873
+      }
+    },
+    {
+      "filename": "4_jazz_120_beat_3-4.mp3",
+      "aesthetic_score": 6.132776618003845,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 5.875342845916748,
+        "CU": 6.91925048828125,
+        "PC": 4.971597671508789,
+        "PQ": 6.764915466308594
+      }
+    },
+    {
+      "filename": "6_rock_102_beat_3-4.mp3",
+      "aesthetic_score": 6.8146703243255615,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.042553424835205,
+        "CU": 8.16496467590332,
+        "PC": 4.561955451965332,
+        "PQ": 7.489207744598389
+      }
+    },
+    {
+      "filename": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s.mp3.mp3",
+      "aesthetic_score": 5.679119944572449,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 6.015482425689697,
+        "CU": 6.8142828941345215,
+        "PC": 3.388106346130371,
+        "PQ": 6.498608112335205
+      }
+    },
+    {
+      "filename": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s.mp3.mp3",
+      "aesthetic_score": 6.81924307346344,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.248638153076172,
+        "CU": 7.903382301330566,
+        "PC": 4.195687294006348,
+        "PQ": 7.929264545440674
+      }
+    },
+    {
+      "filename": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s.mp3.mp3",
+      "aesthetic_score": 6.793166697025299,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.687693119049072,
+        "CU": 8.103069305419922,
+        "PC": 3.3291146755218506,
+        "PQ": 8.052789688110352
+      }
+    },
+    {
+      "filename": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】.mp3.mp3",
+      "aesthetic_score": 6.866283357143402,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.602453708648682,
+        "CU": 7.995741844177246,
+        "PC": 3.8238842487335205,
+        "PQ": 8.04305362701416
+      }
+    },
+    {
+      "filename": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s.mp3.mp3",
+      "aesthetic_score": 7.098521709442139,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.467411041259766,
+        "CU": 7.856765270233154,
+        "PC": 5.089064121246338,
+        "PQ": 7.980846405029297
+      }
+    },
+    {
+      "filename": "竹笛｜这世界那么多人_cover 莫文蔚_60s.mp3.mp3",
+      "aesthetic_score": 7.106512546539307,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.696178913116455,
+        "CU": 8.150995254516602,
+        "PC": 4.4815993309021,
+        "PQ": 8.09727668762207
+      }
+    }
+  ]
+}

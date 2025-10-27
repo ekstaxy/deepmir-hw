@@ -1,0 +1,132 @@
+{
+  "folder": "musicControlLite_generated_music/musicControlLite_melody_generated_0_guidance",
+  "total_files": 9,
+  "successful_evaluations": 9,
+  "failed_evaluations": 0,
+  "statistics": {
+    "mean_aesthetic_score": 6.715687718656328,
+    "median_aesthetic_score": 6.485766351222992,
+    "std_aesthetic_score": 0.4164258577008292,
+    "min_aesthetic_score": 6.139041602611542,
+    "max_aesthetic_score": 7.423409104347229
+  },
+  "files": [
+    {
+      "filename": "10_country_114_beat_4-4.mp3",
+      "aesthetic_score": 6.139041602611542,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 5.921905040740967,
+        "CU": 7.71221399307251,
+        "PC": 3.6307718753814697,
+        "PQ": 7.291275501251221
+      }
+    },
+    {
+      "filename": "4_jazz_120_beat_3-4.mp3",
+      "aesthetic_score": 7.042868137359619,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.2544426918029785,
+        "CU": 7.903488636016846,
+        "PC": 5.154237747192383,
+        "PQ": 7.8593034744262695
+      }
+    },
+    {
+      "filename": "6_rock_102_beat_3-4.mp3",
+      "aesthetic_score": 6.434184551239014,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.3957343101501465,
+        "CU": 7.811443328857422,
+        "PC": 4.014581203460693,
+        "PQ": 7.514979362487793
+      }
+    },
+    {
+      "filename": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s.mp3.mp3",
+      "aesthetic_score": 7.018096685409546,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.667309761047363,
+        "CU": 8.24287223815918,
+        "PC": 4.063279151916504,
+        "PQ": 8.098925590515137
+      }
+    },
+    {
+      "filename": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s.mp3.mp3",
+      "aesthetic_score": 7.121612787246704,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.404782295227051,
+        "CU": 8.045275688171387,
+        "PC": 5.073678016662598,
+        "PQ": 7.962715148925781
+      }
+    },
+    {
+      "filename": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s.mp3.mp3",
+      "aesthetic_score": 6.295093834400177,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 6.875432014465332,
+        "CU": 7.908255577087402,
+        "PC": 2.6430656909942627,
+        "PQ": 7.753622055053711
+      }
+    },
+    {
+      "filename": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】.mp3.mp3",
+      "aesthetic_score": 6.485766351222992,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.082334041595459,
+        "CU": 7.734921455383301,
+        "PC": 3.132148504257202,
+        "PQ": 7.993661403656006
+      }
+    },
+    {
+      "filename": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s.mp3.mp3",
+      "aesthetic_score": 7.423409104347229,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.521299839019775,
+        "CU": 7.444247722625732,
+        "PC": 6.906734466552734,
+        "PQ": 7.821354389190674
+      }
+    },
+    {
+      "filename": "竹笛｜这世界那么多人_cover 莫文蔚_60s.mp3.mp3",
+      "aesthetic_score": 6.481116414070129,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 2,
+      "raw_scores": {
+        "CE": 7.032770156860352,
+        "CU": 7.92981481552124,
+        "PC": 2.9069223403930664,
+        "PQ": 8.05495834350586
+      }
+    }
+  ]
+}

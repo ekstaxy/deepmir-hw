@@ -1,0 +1,132 @@
+{
+  "folder": "musicControlLite_generated_music/musicControlLite_melody_generated_3_guidance",
+  "total_files": 9,
+  "successful_evaluations": 9,
+  "failed_evaluations": 0,
+  "statistics": {
+    "mean_aesthetic_score": 6.747607012589772,
+    "median_aesthetic_score": 6.920871734619141,
+    "std_aesthetic_score": 0.4424839328868504,
+    "min_aesthetic_score": 5.5507431626319885,
+    "max_aesthetic_score": 7.093362212181091
+  },
+  "files": [
+    {
+      "filename": "10_country_114_beat_4-4.mp3",
+      "aesthetic_score": 6.920871734619141,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 6.602880477905273,
+        "CU": 7.8591461181640625,
+        "PC": 5.379711627960205,
+        "PQ": 7.8417487144470215
+      }
+    },
+    {
+      "filename": "4_jazz_120_beat_3-4.mp3",
+      "aesthetic_score": 6.681367993354797,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 6.166010856628418,
+        "CU": 7.343626022338867,
+        "PC": 6.121394634246826,
+        "PQ": 7.094440460205078
+      }
+    },
+    {
+      "filename": "6_rock_102_beat_3-4.mp3",
+      "aesthetic_score": 7.012556552886963,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 6.973036289215088,
+        "CU": 8.068248748779297,
+        "PC": 5.392330646514893,
+        "PQ": 7.616610527038574
+      }
+    },
+    {
+      "filename": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s.mp3.mp3",
+      "aesthetic_score": 5.5507431626319885,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 6.13754415512085,
+        "CU": 6.798083782196045,
+        "PC": 2.907872438430786,
+        "PQ": 6.359472274780273
+      }
+    },
+    {
+      "filename": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s.mp3.mp3",
+      "aesthetic_score": 6.757206082344055,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.107454776763916,
+        "CU": 8.145050048828125,
+        "PC": 3.451523780822754,
+        "PQ": 8.324795722961426
+      }
+    },
+    {
+      "filename": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s.mp3.mp3",
+      "aesthetic_score": 6.758477568626404,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.468649864196777,
+        "CU": 8.12312126159668,
+        "PC": 3.3523573875427246,
+        "PQ": 8.089781761169434
+      }
+    },
+    {
+      "filename": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】.mp3.mp3",
+      "aesthetic_score": 6.970029830932617,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.064383029937744,
+        "CU": 8.086544036865234,
+        "PC": 4.555784702301025,
+        "PQ": 8.173407554626465
+      }
+    },
+    {
+      "filename": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s.mp3.mp3",
+      "aesthetic_score": 7.093362212181091,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.105204105377197,
+        "CU": 8.07639217376709,
+        "PC": 5.1633758544921875,
+        "PQ": 8.02847671508789
+      }
+    },
+    {
+      "filename": "竹笛｜这世界那么多人_cover 莫文蔚_60s.mp3.mp3",
+      "aesthetic_score": 6.983847975730896,
+      "duration_seconds": 47.55446712018141,
+      "sample_rate": 44100,
+      "channels": 1,
+      "raw_scores": {
+        "CE": 7.490827560424805,
+        "CU": 8.067177772521973,
+        "PC": 4.17064905166626,
+        "PQ": 8.206737518310547
+      }
+    }
+  ]
+}
