@@ -50,32 +50,40 @@ def get_audio_files(folder_path):
     return sorted(audio_files)
 
 def evaluate_audio_file(predictor, audio_path):
-    """Evaluate aesthetic score for a single audio file
-    
-    Args:
-        predictor: Initialized aesthetic predictor
-        audio_path: Path to audio file
-        
-    Returns:
-        dict with evaluation results or None if error
-    """
+    """Evaluate aesthetic score for a single audio file"""
     try:
-        # Load audio file
         audio, sr = torchaudio.load(audio_path)
-        
-        # Get aesthetic score
         scores = predictor.forward([{"path": audio, "sample_rate": sr}])
-        aesthetic_score = scores[0] if isinstance(scores, list) else scores
         
-        return {
+        # Extract score
+        aesthetic_result = scores[0] if isinstance(scores, list) else scores
+        
+        # Handle dict or numeric result
+        if isinstance(aesthetic_result, dict):
+            # Store the full dict and calculate mean of numeric values
+            raw_scores = aesthetic_result
+            numeric_values = [float(v) for v in aesthetic_result.values() 
+                            if isinstance(v, (int, float))]
+            aesthetic_score = np.mean(numeric_values) if numeric_values else raw_scores
+        else:
+            raw_scores = None
+            aesthetic_score = float(aesthetic_result)
+        
+        result = {
             "filename": audio_path.name,
-            "aesthetic_score": float(aesthetic_score),
-            "duration_seconds": audio.shape[1] / sr,
-            "sample_rate": sr,
-            "channels": audio.shape[0]
+            "aesthetic_score": aesthetic_score,
+            "duration_seconds": float(audio.shape[1] / sr),
+            "sample_rate": int(sr),
+            "channels": int(audio.shape[0])
         }
+        
+        if raw_scores:
+            result["raw_scores"] = raw_scores
+        
+        return result
+        
     except Exception as e:
-        print(f"    ✗ Error evaluating {audio_path.name}: {str(e)}")
+        print(f"    ✗ Error: {audio_path.name}: {str(e)}")
         return None
 
 def evaluate_folder(predictor, folder_path, output_filename="aesthetic_evaluation.json"):
