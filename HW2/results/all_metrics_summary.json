@@ -1,0 +1,123 @@
+[
+  {
+    "type": "target",
+    "mean_aesthetic": {
+      "CE": 7.107865598466661,
+      "CU": 7.877723428938124,
+      "PC": 3.467956966824002,
+      "PQ": 7.718978457980686,
+      "overall_mean": 6.543131113052368
+    },
+    "mean_clap_text_similarity": 377.0099449157715
+  },
+  {
+    "type": "retrieved",
+    "mean_reference_aesthetic": {
+      "CE": 6.750643216646635,
+      "CU": 7.529562766735371,
+      "PC": 3.385330695372361,
+      "PQ": 7.53206495138315,
+      "overall_mean": 6.29940040753438
+    },
+    "mean_clap_audio_similarity": 24.621471440350568,
+    "mean_melody_accuracy": 0.11916335611266415
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_melody&rythym_generated_1_guidance",
+    "mean_aesthetic": {
+      "CE": 6.953762266370985,
+      "CU": 7.62887536154853,
+      "PC": 4.235497050815159,
+      "PQ": 7.396770583258735,
+      "overall_mean": 6.553726315498352
+    },
+    "mean_melody_accuracy": 0.6236895995226277,
+    "mean_clap_audio_similarity": 24.557234022352432,
+    "mean_clap_text_similarity": 13.246791256798637
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_melody_generated_0_guidance",
+    "mean_aesthetic": {
+      "CE": 7.017334461212158,
+      "CU": 7.859170383877224,
+      "PC": 4.169490999645657,
+      "PQ": 7.816755029890272,
+      "overall_mean": 6.715687718656328
+    },
+    "mean_melody_accuracy": 0.0742503763375239,
+    "mean_clap_audio_similarity": 22.375394609239365,
+    "mean_clap_text_similarity": 13.494663026597765
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_melody_generated_1_guidance",
+    "mean_aesthetic": {
+      "CE": 7.16726467344496,
+      "CU": 7.877138243781196,
+      "PC": 4.282515472835964,
+      "PQ": 7.596838474273682,
+      "overall_mean": 6.73093921608395
+    },
+    "mean_melody_accuracy": 0.6537694780096831,
+    "mean_clap_audio_similarity": 24.60819943745931,
+    "mean_clap_text_similarity": 13.774802419874403
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_melody_generated_2_guidance",
+    "mean_aesthetic": {
+      "CE": 7.177466498480903,
+      "CU": 7.964208179050022,
+      "PC": 4.175216515858968,
+      "PQ": 7.8259613249037,
+      "overall_mean": 6.785713129573399
+    },
+    "mean_melody_accuracy": 0.6717794323067117,
+    "mean_clap_audio_similarity": 25.075467851426865,
+    "mean_clap_text_similarity": 12.613740735583836
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_melody_generated_3_guidance",
+    "mean_aesthetic": {
+      "CE": 6.9017767906188965,
+      "CU": 7.840821107228597,
+      "PC": 4.49944445821974,
+      "PQ": 7.748385694291857,
+      "overall_mean": 6.747607012589771
+    },
+    "mean_melody_accuracy": 0.6595196441406621,
+    "mean_clap_audio_similarity": 22.93078719245063,
+    "mean_clap_text_similarity": 10.930234485202366
+  },
+  {
+    "type": "generated",
+    "folder": "museControlLite_rythym_generated_1_guidance",
+    "mean_aesthetic": {
+      "CE": 7.261799123552111,
+      "CU": 7.73686408996582,
+      "PC": 4.821794907251994,
+      "PQ": 7.547797150082058,
+      "overall_mean": 6.8420638177129955
+    },
+    "mean_melody_accuracy": 0.07692203371441746,
+    "mean_clap_audio_similarity": 21.67746967739529,
+    "mean_clap_text_similarity": 12.690526697370741
+  },
+  {
+    "type": "generated",
+    "folder": "musicgen-small_generated_music",
+    "mean_aesthetic": {
+      "CE": 6.5931022432115345,
+      "CU": 7.493653668297662,
+      "PC": 3.9681756496429443,
+      "PQ": 7.315278053283691,
+      "overall_mean": 6.342552403608958
+    },
+    "mean_melody_accuracy": 0.08502434190685451,
+    "mean_clap_audio_similarity": 19.24572245279948,
+    "mean_clap_text_similarity": 13.604192468855116
+  }
+]

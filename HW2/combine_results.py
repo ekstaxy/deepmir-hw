@@ -11,63 +11,47 @@ def normalize_filename(filename):
         name = stem
     return name
 
-def combine_retrieval_results(folder_path):
-    """Combine retrieval and aesthetic evaluation results."""
-    folder = Path(folder_path)
+def combine_retrieval_with_melody(final_retrieval_path, melody_accuracy_path):
+    """Combine final retrieval results with melody accuracy."""
     
     # Load JSON files
-    retrieval_file = folder / "retrieval_results.json"
-    aesthetic_file = folder / "aesthetic_evaluation_results.json"
-    
-    with open(retrieval_file, 'r', encoding='utf-8') as f:
+    with open(final_retrieval_path, 'r', encoding='utf-8') as f:
         retrieval_data = json.load(f)
     
-    with open(aesthetic_file, 'r', encoding='utf-8') as f:
-        aesthetic_data = json.load(f)
+    with open(melody_accuracy_path, 'r', encoding='utf-8') as f:
+        melody_data = json.load(f)
     
-    # Create combined results
-    combined = []
+    melody_results = melody_data['results']
     
-    for target_name, retrieval_list in retrieval_data.items():
+    # Add melody accuracy to each target
+    for entry in retrieval_data:
+        target_name = entry['target']
         normalized_target = normalize_filename(target_name)
         
-        # Find matching aesthetic data
-        aesthetic_entry = None
-        for entry in aesthetic_data:
-            if normalize_filename(entry['target']) == normalized_target:
-                aesthetic_entry = entry
+        # Find matching melody accuracy
+        melody_acc = None
+        for key, value in melody_results.items():
+            if normalize_filename(key) == normalized_target:
+                melody_acc = value
                 break
         
-        if aesthetic_entry:
-            combined.append({
-                "target": target_name,
-                "target_aesthetic": aesthetic_entry['target_aesthetic'],
-                "top_retrievals": [
-                    {
-                        "reference": item['reference'],
-                        "similarity_score": item['similarity_score'],
-                        "reference_aesthetic": next(
-                            (e['reference_aesthetic'] for e in aesthetic_data 
-                             if normalize_filename(e['reference']) == normalize_filename(item['reference'])),
-                            None
-                        )
-                    }
-                    for item in retrieval_list
-                ]
-            })
+        # Add melody accuracy field
+        entry['melody_accuracy'] = melody_acc
     
-    # Save combined results
-    output_file = folder / "retrieved_combine_results.json"
+    # Save updated results
+    output_file = Path(final_retrieval_path).parent / "final_retrieval_results.json"
     with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(combined, f, indent=2, ensure_ascii=False)
+        json.dump(retrieval_data, f, indent=2, ensure_ascii=False)
     
-    print(f"✓ Combined results saved")
+    print(f"✓ Updated final retrieval results with melody accuracy")
+    print(f"✓ Saved to: {output_file}")
 
 
 def main():
-    folder = Path("HW2/results")
+    final_retrieval = "HW2/results/final_retrieval_results.json"
+    melody_accuracy = "HW2/results/retrieval_melody_accuracy.json"
     
-    combine_retrieval_results(folder)
+    combine_retrieval_with_melody(final_retrieval, melody_accuracy)
     
     print(f"\n✓ Done")
 

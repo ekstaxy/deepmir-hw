@@ -1,0 +1,92 @@
+[
+  {
+    "target": "10_country_114_beat_4-4",
+    "target_aesthetic": {
+      "CE": 6.174484729766846,
+      "CU": 7.648945331573486,
+      "PC": 2.8270022869110107,
+      "PQ": 7.341182231903076
+    },
+    "clap_text_similarity": 450.9864501953125
+  },
+  {
+    "target": "4_jazz_120_beat_3-4",
+    "target_aesthetic": {
+      "CE": 5.637409687042236,
+      "CU": 7.676095962524414,
+      "PC": 3.0690104961395264,
+      "PQ": 7.500865459442139
+    },
+    "clap_text_similarity": 376.3530578613281
+  },
+  {
+    "target": "6_rock_102_beat_3-4",
+    "target_aesthetic": {
+      "CE": 6.869593143463135,
+      "CU": 8.041049003601074,
+      "PC": 3.2326853275299072,
+      "PQ": 7.758249759674072
+    },
+    "clap_text_similarity": 473.75482177734375
+  },
+  {
+    "target": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s",
+    "target_aesthetic": {
+      "CE": 7.2268385887146,
+      "CU": 7.577096939086914,
+      "PC": 3.4659297466278076,
+      "PQ": 7.57368803024292
+    },
+    "clap_text_similarity": 417.53851318359375
+  },
+  {
+    "target": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s",
+    "target_aesthetic": {
+      "CE": 7.385591983795166,
+      "CU": 7.908742904663086,
+      "PC": 2.834749221801758,
+      "PQ": 7.710693359375
+    },
+    "clap_text_similarity": 276.2925720214844
+  },
+  {
+    "target": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s",
+    "target_aesthetic": {
+      "CE": 7.831493377685547,
+      "CU": 8.12619686126709,
+      "PC": 3.220431089401245,
+      "PQ": 7.99066686630249
+    },
+    "clap_text_similarity": 533.6721801757812
+  },
+  {
+    "target": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】",
+    "target_aesthetic": {
+      "CE": 7.62612771987915,
+      "CU": 7.9778008460998535,
+      "PC": 3.857992172241211,
+      "PQ": 7.9531569480896
+    },
+    "clap_text_similarity": 355.3712463378906
+  },
+  {
+    "target": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s",
+    "target_aesthetic": {
+      "CE": 7.5834808349609375,
+      "CU": 7.9325175285339355,
+      "PC": 4.741151809692383,
+      "PQ": 7.874216556549072
+    },
+    "clap_text_similarity": 49.446041107177734
+  },
+  {
+    "target": "竹笛｜这世界那么多人_cover 莫文蔚_60s",
+    "target_aesthetic": {
+      "CE": 7.635770320892334,
+      "CU": 8.011065483093262,
+      "PC": 3.962660551071167,
+      "PQ": 7.768086910247803
+    },
+    "clap_text_similarity": 459.67462158203125
+  }
+]

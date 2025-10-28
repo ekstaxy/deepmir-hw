@@ -10,8 +10,7 @@ def extract_melody_one_hot(audio_path,
                            sr=44100,
                            cutoff=261.2, 
                            win_length=2048,
-                           hop_length=256,
-                           max_duration=None):
+                           hop_length=256):
     """Extract a one-hot chromagram-based melody from an audio file."""
     audio, in_sr = torchaudio.load(str(audio_path))
     audio_mono = audio.mean(dim=0)
@@ -19,11 +18,6 @@ def extract_melody_one_hot(audio_path,
     if in_sr != sr:
         resample_tf = T.Resample(orig_freq=in_sr, new_freq=sr)
         audio_mono = resample_tf(audio_mono)
-
-    # Trim to max_duration if specified
-    if max_duration is not None:
-        max_samples = int(max_duration * sr)
-        audio_mono = audio_mono[:max_samples]
 
     y = audio_mono.numpy()
 
@@ -47,10 +41,10 @@ def extract_melody_one_hot(audio_path,
     return one_hot_chroma
 
 
-def calculate_melody_accuracy(target_path, generated_path, max_duration=None):
+def calculate_melody_accuracy(target_path, reference_path):
     """Calculate melody accuracy between two audio files."""
-    gt_melody = extract_melody_one_hot(target_path, max_duration=max_duration)      
-    gen_melody = extract_melody_one_hot(generated_path, max_duration=max_duration)
+    gt_melody = extract_melody_one_hot(target_path)      
+    gen_melody = extract_melody_one_hot(reference_path)
     
     min_len_melody = min(gen_melody.shape[1], gt_melody.shape[1])
     matches = ((gen_melody[:, :min_len_melody] == gt_melody[:, :min_len_melody]) & 
@@ -88,59 +82,79 @@ def find_audio_file(folder, target_name):
     return None
 
 
-def evaluate_folder(target_folder, generated_folder, duration_sec):
-    """Evaluate melody accuracy for one folder at specific duration."""
+def evaluate_retrieval_melody(retrieval_json, target_folder, reference_folder):
+    """Evaluate melody accuracy for retrieved pairs."""
+    
+    with open(retrieval_json, 'r', encoding='utf-8') as f:
+        retrieval_data = json.load(f)
+    
     target_path = Path(target_folder)
-    generated_path = Path(generated_folder)
+    reference_path = Path(reference_folder)
     
     results = {}
+    all_accuracies = []
     
-    target_files = []
-    for ext in ['.wav', '.mp3', '.flac', '.m4a', '.ogg']:
-        target_files.extend(target_path.glob(f'*{ext}'))
+    print("Calculating melody accuracy for retrieved pairs...")
     
-    print(f"\nProcessing {duration_sec}s: {generated_path.name}")
-    
-    for target_file in target_files:
-        normalized_name = normalize_filename(target_file.name)
-        generated_file = find_audio_file(generated_path, normalized_name)
+    for target_name, retrieval_list in retrieval_data.items():
+        print(f"\n  Target: {target_name}")
         
-        if generated_file is None:
-            print(f"  Missing: {normalized_name}")
-            results[normalized_name] = None
+        # Find target audio file
+        target_file = find_audio_file(target_path, target_name)
+        if target_file is None:
+            print(f"    ✗ Target not found")
+            results[target_name] = None
+            continue
+        
+        # Get the top reference (highest similarity)
+        if not retrieval_list:
+            print(f"    ✗ No retrievals")
+            results[target_name] = None
+            continue
+        
+        top_reference = retrieval_list[0]['reference']
+        reference_file = find_audio_file(reference_path, top_reference)
+        
+        if reference_file is None:
+            print(f"    ✗ Reference not found: {top_reference}")
+            results[target_name] = None
             continue
         
         try:
-            accuracy = calculate_melody_accuracy(target_file, generated_file, max_duration=duration_sec)
-            results[normalized_name] = accuracy
-            print(f"  {normalized_name}: {accuracy:.4f}")
+            accuracy = calculate_melody_accuracy(target_file, reference_file)
+            results[target_name] = accuracy
+            all_accuracies.append(accuracy)
+            print(f"    ✓ Top reference: {top_reference}")
+            print(f"    Melody accuracy: {accuracy:.4f}")
         except Exception as e:
-            print(f"  Error {normalized_name}: {e}")
-            results[normalized_name] = None
+            print(f"    ✗ Error: {e}")
+            results[target_name] = None
     
-    output_path = generated_path / f"melody_accuracy_{duration_sec}s.json"
+    # Calculate mean accuracy
+    mean_accuracy = float(np.mean(all_accuracies)) if all_accuracies else None
+    
+    output_data = {
+        "mean_melody_accuracy": mean_accuracy,
+        "results": results
+    }
+    
+    # Save results
+    output_path = Path(retrieval_json).parent / "retrieval_melody_accuracy.json"
     with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
+        json.dump(output_data, f, indent=2, ensure_ascii=False)
     
-    print(f"  Saved: {output_path}")
-    return results
+    print(f"\n✓ Mean melody accuracy: {mean_accuracy:.4f}")
+    print(f"✓ Saved: {output_path}")
+    
+    return mean_accuracy
 
 
 def main():
+    retrieval_json = "HW2/results/retrieval_results.json"
     target_folder = "HW2/data/target_music_list_60s"
-    generated_folder = "HW2/results/musicgen-small_generated_music"  # Change this
+    reference_folder = "HW2/data/reference_music_list_60s"
     
-    target_path = Path(target_folder)
-    generated_path = Path(generated_folder)
-    
-    print(f"Target folder: {target_path}")
-    print(f"Generated folder: {generated_path}")
-    
-    # Evaluate for 30s
-    evaluate_folder(target_path, generated_path, duration_sec=30)
-    
-    # Evaluate for 60s
-    evaluate_folder(target_path, generated_path, duration_sec=60)
+    evaluate_retrieval_melody(retrieval_json, target_folder, reference_folder)
     
     print(f"\n✓ Done")
 
