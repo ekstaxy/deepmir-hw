@@ -25,17 +25,17 @@ def load_latents(latent_dir, subdir):
     return latents
 
 
-def calculate_similarity(target_latent, reference_latents, top_k=3):
+def calculate_similarity(model, target_latent, reference_latents, top_k=3):
     """Calculate cosine similarity and return top-k matches"""
     similarities = {}
-
+    
     # Reshape target for sklearn cosine_similarity (needs 2D array)
     target_2d = target_latent.reshape(1, -1)
 
     for ref_name, ref_latent in reference_latents.items():
         ref_2d = ref_latent.reshape(1, -1)
         # Calculate cosine similarity
-        similarity = cosine_similarity(target_2d, ref_2d)[0][0]
+        similarity = model.compute_similarity(target_2d, ref_2d)
         similarities[ref_name] = float(similarity)
 
     # Sort by similarity score (highest first) and get top-k
