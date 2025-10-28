@@ -1,0 +1,301 @@
+[
+  {
+    "target": "10_country_114_beat_4-4",
+    "target_aesthetic": {
+      "CE": 6.174484729766846,
+      "CU": 7.648945331573486,
+      "PC": 2.8270022869110107,
+      "PQ": 7.341182231903076
+    },
+    "top_retrievals": [
+      {
+        "reference": "185_reggae_78_fill_4-4",
+        "similarity_score": 0.1496143490076065,
+        "reference_aesthetic": {
+          "CE": 4.129932403564453,
+          "CU": 7.121828079223633,
+          "PC": 1.9045305252075195,
+          "PQ": 7.569418430328369
+        }
+      },
+      {
+        "reference": "186_reggae_78_fill_4-4",
+        "similarity_score": 0.14749541878700256,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "29_latin-samba_116_fill_4-4",
+        "similarity_score": 0.14191578328609467,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "4_jazz_120_beat_3-4",
+    "target_aesthetic": {
+      "CE": 5.637409687042236,
+      "CU": 7.676095962524414,
+      "PC": 3.0690104961395264,
+      "PQ": 7.500865459442139
+    },
+    "top_retrievals": [
+      {
+        "reference": "76_jazz-mediumfast_180_beat_4-4",
+        "similarity_score": 0.1816226691007614,
+        "reference_aesthetic": {
+          "CE": 6.5851263999938965,
+          "CU": 7.965701103210449,
+          "PC": 3.544259548187256,
+          "PQ": 7.735113620758057
+        }
+      },
+      {
+        "reference": "77_jazz-mediumfast_180_beat_4-4",
+        "similarity_score": 0.1783750355243683,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "185_reggae_78_fill_4-4",
+        "similarity_score": 0.17017599940299988,
+        "reference_aesthetic": {
+          "CE": 4.129932403564453,
+          "CU": 7.121828079223633,
+          "PC": 1.9045305252075195,
+          "PQ": 7.569418430328369
+        }
+      }
+    ]
+  },
+  {
+    "target": "6_rock_102_beat_3-4",
+    "target_aesthetic": {
+      "CE": 6.869593143463135,
+      "CU": 8.041049003601074,
+      "PC": 3.2326853275299072,
+      "PQ": 7.758249759674072
+    },
+    "top_retrievals": [
+      {
+        "reference": "176_afrocuban_105_beat_4-4",
+        "similarity_score": 0.14368650317192078,
+        "reference_aesthetic": {
+          "CE": 6.563360214233398,
+          "CU": 8.055319786071777,
+          "PC": 2.952598810195923,
+          "PQ": 7.906566143035889
+        }
+      },
+      {
+        "reference": "1_funk_80_beat_4-4",
+        "similarity_score": 0.1422397792339325,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "2_funk_80_beat_4-4",
+        "similarity_score": 0.13986742496490479,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s",
+    "target_aesthetic": {
+      "CE": 7.2268385887146,
+      "CU": 7.577096939086914,
+      "PC": 3.4659297466278076,
+      "PQ": 7.57368803024292
+    },
+    "top_retrievals": [
+      {
+        "reference": "鄉歌",
+        "similarity_score": 0.12067577987909317,
+        "reference_aesthetic": {
+          "CE": 7.30197286605835,
+          "CU": 6.793186187744141,
+          "PC": 4.045352458953857,
+          "PQ": 6.98944091796875
+        }
+      },
+      {
+        "reference": "愁空山  第1樂章  賴苡鈞演奏  陳志昇指揮（交響）",
+        "similarity_score": 0.11876147240400314,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "雲南山歌",
+        "similarity_score": 0.1173444390296936,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s",
+    "target_aesthetic": {
+      "CE": 7.385591983795166,
+      "CU": 7.908742904663086,
+      "PC": 2.834749221801758,
+      "PQ": 7.710693359375
+    },
+    "top_retrievals": [
+      {
+        "reference": "MIDI-Unprocessed_XP_21_R1_2004_03_ORIG_MID--AUDIO_21_R1_2004_04_Track04_wav",
+        "similarity_score": 0.15435197949409485,
+        "reference_aesthetic": {
+          "CE": 7.3370842933654785,
+          "CU": 7.781047821044922,
+          "PC": 2.7809364795684814,
+          "PQ": 7.553203582763672
+        }
+      },
+      {
+        "reference": "MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_09_Track09_wav",
+        "similarity_score": 0.13080239295959473,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav",
+        "similarity_score": 0.12975628674030304,
+        "reference_aesthetic": {
+          "CE": 7.289735317230225,
+          "CU": 7.553567886352539,
+          "PC": 3.4316749572753906,
+          "PQ": 7.407155513763428
+        }
+      }
+    ]
+  },
+  {
+    "target": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s",
+    "target_aesthetic": {
+      "CE": 7.831493377685547,
+      "CU": 8.12619686126709,
+      "PC": 3.220431089401245,
+      "PQ": 7.99066686630249
+    },
+    "top_retrievals": [
+      {
+        "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav",
+        "similarity_score": 0.13926461338996887,
+        "reference_aesthetic": {
+          "CE": 7.441495418548584,
+          "CU": 7.752604961395264,
+          "PC": 3.4922759532928467,
+          "PQ": 7.489322662353516
+        }
+      },
+      {
+        "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_10_Track10_wav",
+        "similarity_score": 0.13070182502269745,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_03_Track03_wav--1",
+        "similarity_score": 0.122734434902668,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】",
+    "target_aesthetic": {
+      "CE": 7.62612771987915,
+      "CU": 7.9778008460998535,
+      "PC": 3.857992172241211,
+      "PQ": 7.9531569480896
+    },
+    "top_retrievals": [
+      {
+        "reference": "MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav",
+        "similarity_score": 0.12208741903305054,
+        "reference_aesthetic": {
+          "CE": 7.289735317230225,
+          "CU": 7.553567886352539,
+          "PC": 3.4316749572753906,
+          "PQ": 7.407155513763428
+        }
+      },
+      {
+        "reference": "MIDI-Unprocessed_XP_21_R1_2004_03_ORIG_MID--AUDIO_21_R1_2004_04_Track04_wav",
+        "similarity_score": 0.10862971842288971,
+        "reference_aesthetic": {
+          "CE": 7.3370842933654785,
+          "CU": 7.781047821044922,
+          "PC": 2.7809364795684814,
+          "PQ": 7.553203582763672
+        }
+      },
+      {
+        "reference": "MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_04_Track04_wav",
+        "similarity_score": 0.10658259689807892,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s",
+    "target_aesthetic": {
+      "CE": 7.5834808349609375,
+      "CU": 7.9325175285339355,
+      "PC": 4.741151809692383,
+      "PQ": 7.874216556549072
+    },
+    "top_retrievals": [
+      {
+        "reference": "元若藍-愛X無限大-03.綠柚子",
+        "similarity_score": 0.11340431869029999,
+        "reference_aesthetic": {
+          "CE": 7.609434604644775,
+          "CU": 7.858825206756592,
+          "PC": 6.202899932861328,
+          "PQ": 8.258082389831543
+        }
+      },
+      {
+        "reference": "鄉歌",
+        "similarity_score": 0.11227530241012573,
+        "reference_aesthetic": {
+          "CE": 7.30197286605835,
+          "CU": 6.793186187744141,
+          "PC": 4.045352458953857,
+          "PQ": 6.98944091796875
+        }
+      },
+      {
+        "reference": "雲南山歌",
+        "similarity_score": 0.11066145449876785,
+        "reference_aesthetic": null
+      }
+    ]
+  },
+  {
+    "target": "竹笛｜这世界那么多人_cover 莫文蔚_60s",
+    "target_aesthetic": {
+      "CE": 7.635770320892334,
+      "CU": 8.011065483093262,
+      "PC": 3.962660551071167,
+      "PQ": 7.768086910247803
+    },
+    "top_retrievals": [
+      {
+        "reference": "MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav",
+        "similarity_score": 0.11520301550626755,
+        "reference_aesthetic": {
+          "CE": 7.441495418548584,
+          "CU": 7.752604961395264,
+          "PC": 3.4922759532928467,
+          "PQ": 7.489322662353516
+        }
+      },
+      {
+        "reference": "漁舟唱晚 (笛)",
+        "similarity_score": 0.1143837571144104,
+        "reference_aesthetic": null
+      },
+      {
+        "reference": "收割",
+        "similarity_score": 0.10752774775028229,
+        "reference_aesthetic": null
+      }
+    ]
+  }
+]

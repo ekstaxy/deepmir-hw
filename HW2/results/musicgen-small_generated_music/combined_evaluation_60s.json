@@ -7,7 +7,9 @@
       "PC": 5.453726291656494,
       "PQ": 7.264305114746094
     },
-    "melody_accuracy": 0.07347809228383094
+    "melody_accuracy": 0.07347809228383094,
+    "clap_audio_similarity": 20.45085334777832,
+    "clap_text_similarity": 16.943519592285156
   },
   {
     "filename": "4_jazz_120_beat_3-4.mp3",
@@ -17,7 +19,9 @@
       "PC": 4.065055847167969,
       "PQ": 7.292177200317383
     },
-    "melody_accuracy": 0.03819309810003878
+    "melody_accuracy": 0.03819309810003878,
+    "clap_audio_similarity": 16.535388946533203,
+    "clap_text_similarity": 15.898252487182617
   },
   {
     "filename": "6_rock_102_beat_3-4.mp3",
@@ -27,7 +31,9 @@
       "PC": 4.03221321105957,
       "PQ": 7.533841609954834
     },
-    "melody_accuracy": 0.09082977898410237
+    "melody_accuracy": 0.09082977898410237,
+    "clap_audio_similarity": 21.761924743652344,
+    "clap_text_similarity": 18.444046020507812
   },
   {
     "filename": "Hedwig’s theme x dizi ｜from Harry Potter ｜竹笛也能施魔法！Bamboo flute_60s.mp3.mp3",
@@ -37,7 +43,9 @@
       "PC": 2.9544506072998047,
       "PQ": 6.98445463180542
     },
-    "melody_accuracy": 0.11729352462194649
+    "melody_accuracy": 0.11729352462194649,
+    "clap_audio_similarity": 13.525331497192383,
+    "clap_text_similarity": 14.349367141723633
   },
   {
     "filename": "Mussorgsky： Pictures at an Exhibition (Pletnev, Andsnes)_60s.mp3.mp3",
@@ -47,7 +55,9 @@
       "PC": 3.1268763542175293,
       "PQ": 7.624688625335693
     },
-    "melody_accuracy": 0.03867778208607987
+    "melody_accuracy": 0.03867778208607987,
+    "clap_audio_similarity": 9.11669921875,
+    "clap_text_similarity": 4.197452545166016
   },
   {
     "filename": "Spirited Away OST「Always With Me ⧸ Itsumo Nando Demo」Ru's Piano Cover [Sheet Music]_60s.mp3.mp3",
@@ -57,7 +67,9 @@
       "PC": 3.5881669521331787,
       "PQ": 7.544764041900635
     },
-    "melody_accuracy": 0.11322217913920124
+    "melody_accuracy": 0.11322217913920124,
+    "clap_audio_similarity": 21.201038360595703,
+    "clap_text_similarity": 17.44439697265625
   },
   {
     "filename": "【楽譜あり】IRIS OUT⧸米津玄師（ピアノソロ上級）劇場版『チェンソーマン レゼ篇』主題歌【ピアノアレンジ楽譜】.mp3.mp3",
@@ -67,7 +79,9 @@
       "PC": 3.611846685409546,
       "PQ": 7.246387004852295
     },
-    "melody_accuracy": 0.05942225668863901
+    "melody_accuracy": 0.05942225668863901,
+    "clap_audio_similarity": 25.194419860839844,
+    "clap_text_similarity": 13.409621238708496
   },
   {
     "filename": "【菊花台-周杰倫（D調）】附伴奏⧸鋼琴伴奏(竹笛Bamboo flute、Roland Aerophone AE-10) 演奏：蘇俊琪(PSR-S970)audio-technica AT-2035_60s.mp3.mp3",
@@ -77,7 +91,9 @@
       "PC": 5.208681106567383,
       "PQ": 7.181087493896484
     },
-    "melody_accuracy": 0.03790228770841411
+    "melody_accuracy": 0.03790228770841411,
+    "clap_audio_similarity": 21.5579776763916,
+    "clap_text_similarity": 4.432884693145752
   },
   {
     "filename": "竹笛｜这世界那么多人_cover 莫文蔚_60s.mp3.mp3",
@@ -87,6 +103,8 @@
       "PC": 3.6725637912750244,
       "PQ": 7.165796756744385
     },
-    "melody_accuracy": 0.19620007754943777
+    "melody_accuracy": 0.19620007754943777,
+    "clap_audio_similarity": 23.867868423461914,
+    "clap_text_similarity": 17.318191528320312
   }
 ]
