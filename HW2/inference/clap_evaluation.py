@@ -155,10 +155,25 @@ if __name__ == "__main__":
         "HW2/results/musicControlLite_generated_music/musicControlLite_melody&rythym_generated_1_guidance",
         "HW2/results/musicControlLite_generated_music/musicControlLite_rythym_generated_1_guidance"
     ]
+    input_2_path = [
+        "HW2/results/musicgen-small_generated_music", 
+        "HW2/results/flamingo3_audio_captioning.json",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_0_guidance",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_1_guidance",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_2_guidance",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_melody_generated_3_guidance",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_melody&rythym_generated_1_guidance",
+        "HW2/results/musicControlLite_generated_music/musicControlLite_rythym_generated_1_guidance"
+    ]
     for path in input_1_path:
         evaluate_clap(
             path,
             "HW2/results/flamingo3_audio_captioning.json"
+        )
+    for path in input_2_path:
+        evaluate_clap(
+            path,
+            "HW2/data/target_music_list_60s"
         )
     # evaluate_clap(
     #     "HW2/results/musicgen-small_generated_music", 
