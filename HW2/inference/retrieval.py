@@ -28,7 +28,7 @@ def load_latents(latent_dir, subdir):
 def calculate_similarity(model, target_latent, reference_latents, top_k=3):
     """Calculate cosine similarity and return top-k matches"""
     similarities = {}
-    
+
     # Reshape target for sklearn cosine_similarity (needs 2D array)
     target_2d = target_latent.reshape(1, -1)
 
@@ -78,7 +78,8 @@ def main():
     latent_dir = "HW2/data/latents"
     output_path = "HW2/results/retrieval_results.json"
     top_k = 3
-
+    model = load_clap_model()
+    
     print("="*60)
     print("MUSIC RETRIEVAL - COSINE SIMILARITY")
     print("="*60)
