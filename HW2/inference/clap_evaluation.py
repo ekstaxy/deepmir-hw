@@ -14,26 +14,16 @@ def calculate_audio_audio_similarity(model, audio_path1, audio_path2):
     audio1_embed = model.get_audio_embeddings([str(audio_path1)])
     audio2_embed = model.get_audio_embeddings([str(audio_path2)])
     
-    # Move to CPU if on CUDA
-    if hasattr(audio1_embed, 'cpu'):
-        audio1_embed = audio1_embed.cpu().numpy()
-        audio2_embed = audio2_embed.cpu().numpy()
-    
-    similarity = float(np.dot(audio1_embed[0], audio2_embed[0]))
-    return similarity
+    similarity = model.compute_similarity(audio1_embed, audio2_embed)
+    return float(similarity[0][0])
 
 def calculate_text_audio_similarity(model, text, audio_path):
     """Calculate similarity between text and audio file."""
     text_embed = model.get_text_embeddings([text])
     audio_embed = model.get_audio_embeddings([str(audio_path)])
     
-    # Move to CPU if on CUDA
-    if hasattr(text_embed, 'cpu'):
-        text_embed = text_embed.cpu().numpy()
-        audio_embed = audio_embed.cpu().numpy()
-    
-    similarity = float(np.dot(text_embed[0], audio_embed[0]))
-    return similarity
+    similarity = model.compute_similarity(audio_embed, text_embed)
+    return float(similarity[0][0])
 
 def normalize_filename(filename):
     """Remove duplicate extensions."""

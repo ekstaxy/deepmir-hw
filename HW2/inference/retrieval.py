@@ -2,8 +2,13 @@ import os
 import numpy as np
 import json
 from pathlib import Path
+import msclap
 from sklearn.metrics.pairwise import cosine_similarity
 
+def load_clap_model():
+    """Load CLAP model using msclap."""
+    model = msclap.CLAP(version='2023', use_cuda=True)
+    return model
 
 def load_latents(latent_dir, subdir):
     """Load all latent files from a subdirectory"""
