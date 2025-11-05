@@ -103,21 +103,22 @@ class Dataset_Pop1K7(Dataset):
         max_token_id = len(self.tokenizer) - 1
         out_of_bounds = []
 
+        token_ids = tokens.ids
+        token_strings = tokens.tokens
+
         # Check and replace out-of-bounds tokens
-        for i, t in enumerate(tokens):
+        for i, t in enumerate(token_ids):
             if t >= len(self.tokenizer):
                 print(f"Replacing token ID {t} -> 0 at position {i} (vocab size: {len(self.tokenizer)})")
-                tokens[i] = 0
+                token_ids[i] = 0
                 out_of_bounds.append(t)
+                token_strings[i] = "PAD_None"
 
         if out_of_bounds:
             unique_oob = set(out_of_bounds)
             print(f"\nSummary: Found {len(out_of_bounds)} out-of-bounds tokens")
             print(f"Unique out-of-bounds token IDs: {sorted(unique_oob)}")
             print(f"All replaced with 0")
-        
-        token_ids = tokens.ids
-        token_strings = tokens.tokens
         
         # Find bar positions
         bar_positions = [
