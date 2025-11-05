@@ -145,8 +145,16 @@ def estimate_gpu_memory(model, batch_size, seq_len, dtype=torch.float32):
     # Calculate parameter memory
     param_memory = sum(p.numel() for p in model.parameters()) * torch.finfo(dtype).bits / 8 / 1e6
 
+    # Determine hidden size based on model type
+    if hasattr(model.config, "d_model"):  # For TransformerXL
+        hidden_size = model.config.d_model
+    elif hasattr(model.config, "n_embd"):  # For GPT2
+        hidden_size = model.config.n_embd
+    else:
+        raise AttributeError("Model configuration does not have a valid hidden size attribute.")
+
     # Calculate activation memory (forward pass)
-    activation_memory = batch_size * seq_len * model.config.d_model * torch.finfo(dtype).bits / 8 / 1e6
+    activation_memory = batch_size * seq_len * hidden_size * torch.finfo(dtype).bits / 8 / 1e6
 
     # Total memory (parameters + activations + gradients)
     total_memory = param_memory + 2 * activation_memory  # Gradients require same memory as activations
