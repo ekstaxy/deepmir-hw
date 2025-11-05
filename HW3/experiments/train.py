@@ -264,7 +264,10 @@ def main():
     dataset = Dataset_Pop1K7(
         midi_files, 
         tokenizer, 
-        bars_per_chunk=args.bars_per_chunk
+        bars_per_chunk=args.bars_per_chunk,
+        pitch_augment_range=(-5, 5),
+        velocity_augment_range=(-10, 10),
+        augment_prob=0.5,
     )
     
     print(f"Dataset created: {len(dataset)} chunks")
