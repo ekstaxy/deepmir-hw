@@ -3,7 +3,6 @@ import numpy as np
 import json
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
-z
 
 def load_latents(latent_dir, subdir):
     """Load all latent files from a subdirectory"""
