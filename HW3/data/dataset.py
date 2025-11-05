@@ -4,8 +4,9 @@ from miditok import REMI, TokenizerConfig
 from symusic import Score
 from pathlib import Path
 import random
+import argparse
 
-class MusicDatasetOnTheFly(Dataset):
+class Dataset_Pop1K7(Dataset):
     """Dataset that tokenizes MIDI on-the-fly with augmentation and 32-bar chunking"""
     
     def __init__(
@@ -172,3 +173,47 @@ def collate_fn_dynamic(batch, pad_id):
         'labels': labels,
         'attention_mask': attention_mask
     }
+
+# Dataset Testing
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Dataset preparation script")
+    parser.add_argument(
+        "-d", "--data", 
+        type=str, 
+        action="append", 
+        required=True, 
+        help="Path to MIDI file directories (can be specified multiple times)"
+    )
+
+    args = parser.parse_args()
+
+    midi_files = []
+    for directory in args.data:
+        midi_files.extend(Path(directory).rglob("*.mid"))  # Recursively find all MIDI files
+
+    TOKENIZER_PARAMS = {
+        "pitch_range": (21, 109),
+        "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
+        "num_velocities": 64,
+        "use_velocities": True,
+        "special_tokens": ["PAD", "BOS", "EOS", "MASK"],
+        "use_note_duration_program": True,
+        "use_chords": True,
+        "chord_tokens_with_root_note": True,
+        "use_rests": True,
+        "use_tempos": True,
+        "use_time_signatures": False,
+        "use_programs": False,
+        "num_tempos": 32,
+        "tempo_range": (50, 200),
+    }
+    config = TokenizerConfig(**TOKENIZER_PARAMS)
+
+    midi_file_dir1 = argparse.PathType()
+    midi_file_dir2 = argparse.PathType()
+
+    dataset = Dataset_Pop1K7(
+        midi_files=midi_files,
+        tokenizer=REMI(config),
+    )
