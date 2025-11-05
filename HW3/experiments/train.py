@@ -9,7 +9,7 @@ sys.path.append(str(project_root))
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from data.dataset import Dataset_Pop1K, collate_fn_dynamic
+from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, TokenizerConfig
@@ -261,7 +261,7 @@ def main():
     
     # Create dataset
     print(f"Creating dataset: bars_per_chunk={args.bars_per_chunk}")
-    dataset = Dataset_Pop1K(
+    dataset = Dataset_Pop1K7(
         midi_files, 
         tokenizer, 
         bars_per_chunk=args.bars_per_chunk
