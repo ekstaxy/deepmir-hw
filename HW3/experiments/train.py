@@ -290,7 +290,7 @@ def main():
     print(f"Creating model: type={args.model_type}, layers={args.n_layer}, embd={args.n_embd}, heads={args.n_head}")
     model = create_model(
         model_type=args.model_type,
-        vocab_size=max(tokenizer.vocab.keys()),
+        vocab_size=len(tokenizer.vocab),
         max_seq_len=args.max_seq_len,
         n_layer=args.n_layer,
         n_embd=args.n_embd,
