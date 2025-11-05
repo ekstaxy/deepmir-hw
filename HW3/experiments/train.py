@@ -13,6 +13,7 @@ from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, TokenizerConfig
+from functools import partial
 import matplotlib.pyplot as plt
 import argparse
 
@@ -49,16 +50,17 @@ def parse_args():
     return parser.parse_args()
 
 
-def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=2):
+def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=2, tokenizer=None):
     """Create dataloader with proper collate function"""
+    collate_fn = partial(collate_fn_dynamic, pad_id=tokenizer["PAD_None"])
     return DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=num_workers,
-        collate_fn=collate_fn_dynamic
+        collate_fn=collate_fn  
     )
-
+    
 
 def create_optimizer(model, lr=5e-4, weight_decay=0.01):
     """AdamW optimizer with weight decay"""
@@ -163,7 +165,8 @@ def train(
     device='cuda',
     checkpoint_dir='./checkpoints',
     save_every=20,
-    warmup_steps=1000
+    warmup_steps=1000,
+    tokenizer=None
 ):
     """Complete training function with loss visualization"""
     
@@ -171,7 +174,7 @@ def train(
     os.makedirs(checkpoint_dir, exist_ok=True)
     
     # Create dataloader
-    dataloader = create_dataloader(train_dataset, batch_size=batch_size)
+    dataloader = create_dataloader(train_dataset, batch_size=batch_size, tokenizer=tokenizer)
     
     # Create optimizer
     optimizer = create_optimizer(model, lr=lr)
@@ -314,7 +317,8 @@ def main():
         device=device,
         checkpoint_dir=args.checkpoint_dir,
         save_every=args.save_every,
-        warmup_steps=args.warmup_steps
+        warmup_steps=args.warmup_steps,
+        tokenizer=tokenizer
     )
     
     print(f"Training complete. Final loss: {losses[-1]:.4f}")
