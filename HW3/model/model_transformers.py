@@ -139,15 +139,22 @@ if __name__ == "__main__":
         n_layer=12,
         n_embd=512,
         n_head=8,
+        bos_token_id=0,
+        eos_token_id=1,
+        pad_token_id=2,
     )
     print(f"GPT-2 Model created: {model.num_parameters():,} parameters")
     
     # Test Transformer-XL
     model_xl = create_model(
         model_type='transformer-xl',
-        vocab_size=5000,
+        vocab_size=10000,
         n_layer=12,
         d_model=512,
         n_head=8,
+        cutoff_len=512,
+        bos_token_id=0,
+        eos_token_id=1,
+        pad_token_id=2,
     )
     print(f"Transformer-XL Model created: {model_xl.num_parameters():,} parameters")

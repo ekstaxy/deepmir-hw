@@ -210,9 +210,6 @@ if __name__ == "__main__":
     }
     config = TokenizerConfig(**TOKENIZER_PARAMS)
 
-    midi_file_dir1 = argparse.PathType()
-    midi_file_dir2 = argparse.PathType()
-
     dataset = Dataset_Pop1K7(
         midi_files=midi_files,
         tokenizer=REMI(config),
