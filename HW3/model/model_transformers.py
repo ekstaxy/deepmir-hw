@@ -9,6 +9,7 @@ from transformers import (
     TransfoXLLMHeadModel
 )
 import torch.nn as nn
+import torch
 
 
 class GPT2(nn.Module):    
@@ -128,6 +129,30 @@ def create_model(model_type, vocab_size, **kwargs):
         raise ValueError(f"Unknown model type: {model_type}")
 
 
+def estimate_gpu_memory(model, batch_size, seq_len, dtype=torch.float32):
+    """
+    Estimate GPU memory usage for a model.
+
+    Args:
+        model: The PyTorch model.
+        batch_size: Batch size for input.
+        seq_len: Sequence length for input.
+        dtype: Data type (default: torch.float32).
+
+    Returns:
+        Estimated memory usage in MB.
+    """
+    # Calculate parameter memory
+    param_memory = sum(p.numel() for p in model.parameters()) * torch.finfo(dtype).bits / 8 / 1e6
+
+    # Calculate activation memory (forward pass)
+    activation_memory = batch_size * seq_len * model.config.d_model * torch.finfo(dtype).bits / 8 / 1e6
+
+    # Total memory (parameters + activations + gradients)
+    total_memory = param_memory + 2 * activation_memory  # Gradients require same memory as activations
+
+    return total_memory
+
 if __name__ == "__main__":
     # Test model creation
     print("Testing model creation...")
@@ -144,6 +169,8 @@ if __name__ == "__main__":
         pad_token_id=2,
     )
     print(f"GPT-2 Model created: {model.num_parameters():,} parameters")
+    gpt2_memory = estimate_gpu_memory(model, batch_size=32, seq_len=1024)
+    print(f"Estimated GPU memory for GPT-2: {gpt2_memory:.2f} MB")
     
     # Test Transformer-XL
     model_xl = create_model(
@@ -152,9 +179,11 @@ if __name__ == "__main__":
         n_layer=12,
         d_model=512,
         n_head=8,
-        cutoff_len=512,
+        cutoffsq=512,
         bos_token_id=0,
         eos_token_id=1,
         pad_token_id=2,
     )
     print(f"Transformer-XL Model created: {model_xl.num_parameters():,} parameters")
+    transformer_xl_memory = estimate_gpu_memory(model_xl, batch_size=32, seq_len=512)
+    print(f"Estimated GPU memory for Transformer-XL: {transformer_xl_memory:.2f} MB")

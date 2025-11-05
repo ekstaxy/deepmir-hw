@@ -51,7 +51,7 @@ class Dataset_Pop1K7(Dataset):
                 num_bars = len(bar_positions)
                 
                 # Create chunks of 32 bars from this file
-                for start_bar in range(0, num_bars, bars_per_chunk):
+                for start_bar in range(0, num_bars, bars_per_chunk - 8):
                     chunk_bars = min(bars_per_chunk, num_bars - start_bar)
                     if chunk_bars >= 8:  # Only keep chunks with at least 8 bars
                         self.valid_chunks.append((file_idx, start_bar, chunk_bars))
