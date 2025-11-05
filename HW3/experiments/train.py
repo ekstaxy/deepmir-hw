@@ -1,18 +1,20 @@
 import os
+import sys
+from pathlib import Path
+
+# Add project root to path before importing local modules
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from data.dataset import Dataset_Pop1K, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL
 from transformers import get_cosine_schedule_with_warmup
-import sys
-from pathlib import Path
 from miditok import REMI, TokenizerConfig
 import matplotlib.pyplot as plt
 import argparse
-
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
 
 
 def parse_args():
