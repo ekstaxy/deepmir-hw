@@ -8,8 +8,8 @@ sys.path.append(str(project_root))
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from data.dataset_final import Dataset_Pop1K7, collate_fn_dynamic
-from model.model_transformers_fixed import GPT2, TransformerXL, CPWordModel
+from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
+from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, CPWord, TokenizerConfig
 from functools import partial
