@@ -12,7 +12,7 @@ from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, CPWord, TokenizerConfig
-from miditok.pytorch_data import tokens_to_tensor
+
 from functools import partial
 import matplotlib.pyplot as plt
 import argparse
@@ -291,15 +291,8 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         bool: True if successful, False otherwise
     """
     try:
-        # Convert numpy array to list of lists for miditok
-        tokens_list = tokens.tolist()
-        
-        # Create TokSequence - CPWord expects compound tokens
-        from miditok import TokSequence
-        tok_sequence = TokSequence(ids=tokens_list)
-        
         # Convert to MIDI
-        midi = tokenizer.tokens_to_midi([tok_sequence])
+        midi = tokenizer.decode([tokens])
         
         # Save MIDI file
         midi.dump_midi(output_path)

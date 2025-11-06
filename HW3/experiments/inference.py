@@ -7,7 +7,6 @@ import argparse
 import os
 from pathlib import Path
 from miditok import REMI, CPWord
-from miditok import TokSequence
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 import numpy as np
 from symusic import Score
@@ -331,15 +330,9 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         bool: True if successful
     """
     try:
-        # Convert numpy array to list of lists
-        tokens_list = tokens.tolist()
-        
-        # Create TokSequence
-        tok_sequence = TokSequence(ids=tokens_list)
-        
         # Convert to MIDI
-        midi = tokenizer.tokens_to_midi([tok_sequence])
-        
+        midi = tokenizer.decode([tokens])
+
         # Save MIDI file
         midi.dump_midi(output_path)
         return True
@@ -433,7 +426,7 @@ def generate_unconditional_remi(
 def save_remi_tokens_as_midi(token_ids, tokenizer, output_path):
     """Convert REMI token IDs to MIDI file"""
     try:
-        midi = tokenizer.tokens_to_midi([token_ids])
+        midi = tokenizer.decode([token_ids])
         midi.dump_midi(output_path)
         return True
     except Exception as e:
