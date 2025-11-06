@@ -234,7 +234,7 @@ def main():
     args = parse_args()
     
     TOKENIZER_PARAMS = {
-        "pitch_range": (21, 109),
+        "pitch_range": (1, 127),
         "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
         "num_velocities": 64,
         "use_velocities": True,

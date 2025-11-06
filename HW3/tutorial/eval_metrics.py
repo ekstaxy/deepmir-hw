@@ -2,7 +2,7 @@ import numpy as np
 from glob import glob
 import random, itertools
 import pickle
-import utils
+import sample_code.utils
 import pandas as pd
 import os
 import scipy.stats
@@ -48,14 +48,14 @@ event2word, word2event = pickle.load(open(opt.dict_path, 'rb'))
 
 
 def extract_events(input_path):
-    note_items, tempo_items = utils.read_items(input_path)
-    note_items = utils.quantize_items(note_items)
+    note_items, tempo_items = sample_code.utils.read_items(input_path)
+    note_items = sample_code.utils.quantize_items(note_items)
     max_time = note_items[-1].end
 
     items = tempo_items + note_items
 
-    groups = utils.group_items(items, max_time)
-    events = utils.item2event(groups)
+    groups = sample_code.utils.group_items(items, max_time)
+    events = sample_code.utils.item2event(groups)
     return events
 
 def prepare_data(midi_path):

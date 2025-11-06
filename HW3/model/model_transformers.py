@@ -8,9 +8,6 @@ from transformers import (
     TransfoXLConfig,
     TransfoXLLMHeadModel
 )
-from fast_transformers.builders import TransformerEncoderBuilder
-from fast_transformers.builders import RecurrentEncoderBuilder
-from fast_transformers.masking import TriangularCausalMask
 import numpy as np
 import torch.nn as nn
 import torch
@@ -112,10 +109,11 @@ class TransformerXL(nn.Module):
     def num_parameters(self):
         return sum(p.numel() for p in self.parameters())
 
+
 ################################################################################
 # Sampling
 ################################################################################
-# -- temperature -- #
+
 def softmax_with_temperature(logits, temperature):
     probs = np.exp(logits / temperature) / np.sum(np.exp(logits / temperature))
     return probs
@@ -129,7 +127,6 @@ def weighted_sampling(probs):
     return word
 
 
-# -- nucleus -- #
 def nucleus(probs, p):
     probs /= (sum(probs) + 1e-5)
     sorted_probs = np.sort(probs)[::-1]
@@ -156,11 +153,13 @@ def sampling(logit, p=None, t=1.0):
     else:
         cur_word = weighted_sampling(probs)
     return cur_word
-    
-############################################################################################################################   
-    
+
+
+################################################################################
+# CPWORD Model Components
+################################################################################
+
 def network_paras(model):
-    # compute only trainable params
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     return params
@@ -198,7 +197,6 @@ class CPWordModel(nn.Module):
     def __init__(self, n_token, is_training=True):
         super(CPWordModel, self).__init__()
 
-        # --- params config --- #
         self.n_token = n_token
         self.d_model = 512
         self.n_layer = 12
@@ -208,9 +206,8 @@ class CPWordModel(nn.Module):
         self.d_inner = 2048
         self.loss_func = nn.CrossEntropyLoss(reduction='none')
         self.emb_sizes = [128, 256, 64, 32, 512, 128, 128]
+        self.is_training = is_training
 
-        # --- modules config --- #
-        # embeddings
         print('>>>>>:', self.n_token)
         self.word_emb_tempo     = Embeddings(self.n_token[0], self.emb_sizes[0])
         self.word_emb_chord     = Embeddings(self.n_token[1], self.emb_sizes[1])
@@ -221,40 +218,24 @@ class CPWordModel(nn.Module):
         self.word_emb_velocity  = Embeddings(self.n_token[6], self.emb_sizes[6])
         self.pos_emb            = PositionalEncoding(self.d_model, self.dropout)
 
-        # linear 
         self.in_linear = nn.Linear(np.sum(self.emb_sizes), self.d_model)
 
-         # encoder
-        if is_training:
-            # encoder (training)
-            self.transformer_encoder = TransformerEncoderBuilder.from_kwargs(
-                n_layers=self.n_layer,
-                n_heads=self.n_head,
-                query_dimensions=self.d_model//self.n_head,
-                value_dimensions=self.d_model//self.n_head,
-                feed_forward_dimensions=2048,
-                activation='gelu',
-                dropout=0.1,
-                attention_type="causal-linear",
-            ).get()
-        else:
-            # encoder (inference)
-            print(' [o] using RNN backend.')
-            self.transformer_encoder = RecurrentEncoderBuilder.from_kwargs(
-                n_layers=self.n_layer,
-                n_heads=self.n_head,
-                query_dimensions=self.d_model//self.n_head,
-                value_dimensions=self.d_model//self.n_head,
-                feed_forward_dimensions=2048,
-                activation='gelu',
-                dropout=0.1,
-                attention_type="causal-linear",
-            ).get()
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=self.d_model,
+            nhead=self.n_head,
+            dim_feedforward=self.d_inner,
+            dropout=self.dropout,
+            activation='gelu',
+            batch_first=True,
+            norm_first=False
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=self.n_layer
+        )
 
-        # blend with type
         self.project_concat_type = nn.Linear(self.d_model + 32, self.d_model)
 
-        # individual output
         self.proj_tempo    = nn.Linear(self.d_model, self.n_token[0])        
         self.proj_chord    = nn.Linear(self.d_model, self.n_token[1])
         self.proj_barbeat  = nn.Linear(self.d_model, self.n_token[2])
@@ -273,7 +254,6 @@ class CPWordModel(nn.Module):
         h, y_type  = self.forward_hidden(x)
         y_tempo, y_chord, y_barbeat, y_pitch, y_duration, y_velocity = self.forward_output(h, target)
          
-        # reshape (b, s, f) -> (b, f, s)
         y_tempo     = y_tempo[:, ...].permute(0, 2, 1)
         y_chord     = y_chord[:, ...].permute(0, 2, 1)
         y_barbeat   = y_barbeat[:, ...].permute(0, 2, 1)
@@ -282,31 +262,17 @@ class CPWordModel(nn.Module):
         y_duration  = y_duration[:, ...].permute(0, 2, 1)
         y_velocity  = y_velocity[:, ...].permute(0, 2, 1)
         
-        # loss
-        loss_tempo = self.compute_loss(
-                y_tempo, target[..., 0], loss_mask)
-        loss_chord = self.compute_loss(
-                y_chord, target[..., 1], loss_mask)
-        loss_barbeat = self.compute_loss(
-                y_barbeat, target[..., 2], loss_mask)
-        loss_type = self.compute_loss(
-                y_type,  target[..., 3], loss_mask)
-        loss_pitch = self.compute_loss(
-                y_pitch, target[..., 4], loss_mask)
-        loss_duration = self.compute_loss(
-                y_duration, target[..., 5], loss_mask)
-        loss_velocity = self.compute_loss(
-                y_velocity, target[..., 6], loss_mask)
+        loss_tempo = self.compute_loss(y_tempo, target[..., 0], loss_mask)
+        loss_chord = self.compute_loss(y_chord, target[..., 1], loss_mask)
+        loss_barbeat = self.compute_loss(y_barbeat, target[..., 2], loss_mask)
+        loss_type = self.compute_loss(y_type,  target[..., 3], loss_mask)
+        loss_pitch = self.compute_loss(y_pitch, target[..., 4], loss_mask)
+        loss_duration = self.compute_loss(y_duration, target[..., 5], loss_mask)
+        loss_velocity = self.compute_loss(y_velocity, target[..., 6], loss_mask)
 
         return loss_tempo, loss_chord, loss_barbeat, loss_type, loss_pitch, loss_duration, loss_velocity
 
     def forward_hidden(self, x, memory=None, is_training=True):
-        '''
-        linear transformer: b x s x f
-        x.shape=(bs, nf)
-        '''
-    
-        # embeddings
         emb_tempo =    self.word_emb_tempo(x[..., 0])
         emb_chord =    self.word_emb_chord(x[..., 1])
         emb_barbeat =  self.word_emb_barbeat(x[..., 2])
@@ -315,46 +281,36 @@ class CPWordModel(nn.Module):
         emb_duration = self.word_emb_duration(x[..., 5])
         emb_velocity = self.word_emb_velocity(x[..., 6])
 
-        embs = torch.cat(
-            [
-                emb_tempo,
-                emb_chord,
-                emb_barbeat,
-                emb_type,
-                emb_pitch,
-                emb_duration,
-                emb_velocity,
-            ], dim=-1)
+        embs = torch.cat([
+            emb_tempo, emb_chord, emb_barbeat, emb_type,
+            emb_pitch, emb_duration, emb_velocity
+        ], dim=-1)
 
         emb_linear = self.in_linear(embs)
         pos_emb = self.pos_emb(emb_linear)
-
-        # assert False
     
-        # transformer
         if is_training:
-            # mask
-            attn_mask = TriangularCausalMask(pos_emb.size(1), device=x.device)
-            h = self.transformer_encoder(pos_emb, attn_mask) # y: b x s x d_model
-
-            # project type
+            seq_len = pos_emb.size(1)
+            causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=x.device), diagonal=1).bool()
+            h = self.transformer_encoder(pos_emb, mask=causal_mask)
             y_type = self.proj_type(h)
             return h, y_type
         else:
-            pos_emb = pos_emb.squeeze(0)
-            h, memory = self.transformer_encoder(pos_emb, memory=memory) # y: s x d_model
+            if memory is None:
+                memory = {'past_keys': [], 'past_values': []}
             
-            # project type
+            pos_emb = pos_emb.squeeze(0)
+            h = pos_emb.unsqueeze(0)
+            
+            for layer in self.transformer_encoder.layers:
+                h = layer(h)
+            
+            h = h.squeeze(0)
             y_type = self.proj_type(h)
             return h, y_type, memory
 
     def forward_output(self, h, y):
-        '''
-        for training
-        '''
         tf_skip_type = self.word_emb_type(y[..., 3])
-
-        # project other
         y_concat_type = torch.cat([h, tf_skip_type], dim=-1)
         y_  = self.project_concat_type(y_concat_type)
 
@@ -365,35 +321,26 @@ class CPWordModel(nn.Module):
         y_duration = self.proj_duration(y_)
         y_velocity = self.proj_velocity(y_)
 
-        return  y_tempo, y_chord, y_barbeat, y_pitch, y_duration, y_velocity
+        return y_tempo, y_chord, y_barbeat, y_pitch, y_duration, y_velocity
 
     def froward_output_sampling(self, h, y_type):
-        '''
-        for inference
-        '''
-        # sample type
         y_type_logit = y_type[0, :]
         cur_word_type = sampling(y_type_logit, p=0.90)
 
         type_word_t = torch.from_numpy(
-                    np.array([cur_word_type])).long().cuda().unsqueeze(0)
+            np.array([cur_word_type])).long().to(h.device).unsqueeze(0)
 
         tf_skip_type = self.word_emb_type(type_word_t).squeeze(0)
-
-        # concat
         y_concat_type = torch.cat([h, tf_skip_type], dim=-1)
         y_  = self.project_concat_type(y_concat_type)
 
-        # project other
         y_tempo    = self.proj_tempo(y_)
         y_chord    = self.proj_chord(y_)
         y_barbeat  = self.proj_barbeat(y_)
-
         y_pitch    = self.proj_pitch(y_)
         y_duration = self.proj_duration(y_)
         y_velocity = self.proj_velocity(y_)
         
-        # sampling gen_cond
         cur_word_tempo =    sampling(y_tempo, t=1.2, p=0.9)
         cur_word_barbeat =  sampling(y_barbeat, t=1.2)
         cur_word_chord =    sampling(y_chord, p=0.99)
@@ -401,65 +348,50 @@ class CPWordModel(nn.Module):
         cur_word_duration = sampling(y_duration, t=2, p=0.9)
         cur_word_velocity = sampling(y_velocity, t=5)        
 
-        # collect
         next_arr = np.array([
-            cur_word_tempo,
-            cur_word_chord,
-            cur_word_barbeat,
-            cur_word_type,
-            cur_word_pitch,
-            cur_word_duration,
+            cur_word_tempo, cur_word_chord, cur_word_barbeat,
+            cur_word_type, cur_word_pitch, cur_word_duration,
             cur_word_velocity,
-            ])        
+        ])        
         return next_arr
 
-    def inference_from_scratch(self, dictionary):
+    def inference_from_scratch(self, dictionary, device='cuda'):
         event2word, word2event = dictionary
         classes = word2event.keys()
 
         def print_word_cp(cp):
             result = [word2event[k][cp[idx]] for idx, k in enumerate(classes)]
-
             for r in result:
                 print('{:15s}'.format(str(r)), end=' | ')
             print('')
 
-        init = np.array([
-            [0, 0, 1, 1, 0, 0, 0], # bar
-        ])
+        init = np.array([[0, 0, 1, 1, 0, 0, 0]])
 
-        cnt_token = len(init)
         with torch.no_grad():
             final_res = []
             memory = None
             h = None
             
             cnt_bar = 1
-            init_t = torch.from_numpy(init).long().cuda()
+            init_t = torch.from_numpy(init).long().to(device)
             print('------ initiate ------')
             for step in range(init.shape[0]):
                 print_word_cp(init[step, :])
                 input_ = init_t[step, :].unsqueeze(0).unsqueeze(0)
                 final_res.append(init[step, :][None, ...])
-
-                h, y_type, memory = self.forward_hidden(
-                        input_, memory, is_training=False)
+                h, y_type, memory = self.forward_hidden(input_, memory, is_training=False)
 
             print('------ generate ------')
-            while(True):
-                # sample others
+            while True:
                 next_arr = self.froward_output_sampling(h, y_type)
                 final_res.append(next_arr[None, ...])
-                print('bar:', cnt_bar, end= '  ==')
+                print('bar:', cnt_bar, end='  ==')
                 print_word_cp(next_arr)
 
-                # forward
-                input_ = torch.from_numpy(next_arr).long().cuda()
+                input_ = torch.from_numpy(next_arr).long().to(device)
                 input_  = input_.unsqueeze(0).unsqueeze(0)
-                h, y_type, memory = self.forward_hidden(
-                    input_, memory, is_training=False)
+                h, y_type, memory = self.forward_hidden(input_, memory, is_training=False)
 
-                # end of sequence
                 if word2event['type'][next_arr[3]] == 'EOS':
                     break
                 
@@ -472,94 +404,32 @@ class CPWordModel(nn.Module):
         return final_res
 
 
-
-
 def create_model(model_type, vocab_size, **kwargs):
-
-    """
-    Factory function to create models
-    
-    Args:
-        model_type: 'gpt2' or 'transformer-xl'
-        vocab_size: Size of vocabulary
-        **kwargs: Model-specific arguments
-    
-    Returns:
-        Model instance
-    """
     if model_type == 'gpt2':
         return GPT2(vocab_size=vocab_size, **kwargs)
     elif model_type == 'transformer-xl':
         return TransformerXL(vocab_size=vocab_size, **kwargs)
-    elif model_type == 'CPWord':
+    elif model_type == 'cpword':
         return CPWordModel(n_token=vocab_size, is_training=True)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
 
-def estimate_gpu_memory(model, batch_size, seq_len, dtype=torch.float32):
-    """
-    Estimate GPU memory usage for a model.
-
-    Args:
-        model: The PyTorch model.
-        batch_size: Batch size for input.
-        seq_len: Sequence length for input.
-        dtype: Data type (default: torch.float32).
-
-    Returns:
-        Estimated memory usage in MB.
-    """
-    # Calculate parameter memory
-    param_memory = sum(p.numel() for p in model.parameters()) * torch.finfo(dtype).bits / 8 / 1e6
-
-    # Determine hidden size based on model type
-    if hasattr(model.config, "d_model"):  # For TransformerXL
-        hidden_size = model.config.d_model
-    elif hasattr(model.config, "n_embd"):  # For GPT2
-        hidden_size = model.config.n_embd
-    else:
-        raise AttributeError("Model configuration does not have a valid hidden size attribute.")
-
-    # Calculate activation memory (forward pass)
-    activation_memory = batch_size * seq_len * hidden_size * torch.finfo(dtype).bits / 8 / 1e6
-
-    # Total memory (parameters + activations + gradients)
-    total_memory = param_memory + 2 * activation_memory  # Gradients require same memory as activations
-
-    return total_memory
-
 if __name__ == "__main__":
-    # Test model creation
     print("Testing model creation...")
     
-    # Test GPT-2
-    model = create_model(
-        model_type='CPWord',
-        vocab_size=5000,
-        n_layer=12,
-        n_embd=512,
-        n_head=8,
-        bos_token_id=0,
-        eos_token_id=1,
-        pad_token_id=2,
-    )
-    print(f"CPWord Model created: {model.num_parameters():,} parameters")
-    cpword_memory = estimate_gpu_memory(model, batch_size=32, seq_len=1024)
-    print(f"Estimated GPU memory for CPWord: {cpword_memory:.2f} MB")
-
-    # # Test Transformer-XL
-    # model_xl = create_model(
-    #     model_type='transformer-xl',
-    #     vocab_size=10000,
-    #     n_layer=12,
-    #     d_model=512,
-    #     n_head=8,
-    #     cutoffsq=512,
-    #     bos_token_id=0,
-    #     eos_token_id=1,
-    #     pad_token_id=2,
-    # )
-    # print(f"Transformer-XL Model created: {model_xl.num_parameters():,} parameters")
-    # transformer_xl_memory = estimate_gpu_memory(model_xl, batch_size=32, seq_len=512)
-    # print(f"Estimated GPU memory for Transformer-XL: {transformer_xl_memory:.2f} MB")
+    n_token = [128, 256, 64, 32, 512, 128, 128]
+    model = CPWordModel(n_token=n_token, is_training=True)
+    
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"CPWord Model created: {total_params:,} parameters")
+    
+    batch_size = 4
+    seq_len = 512
+    dummy_input = torch.randint(0, 50, (batch_size, seq_len, 7))
+    dummy_target = torch.randint(0, 50, (batch_size, seq_len, 7))
+    dummy_mask = torch.ones(batch_size, seq_len)
+    
+    losses = model.train_step(dummy_input, dummy_target, dummy_mask)
+    print(f"Test forward pass successful!")
+    print(f"Loss values: {[f'{l.item():.4f}' for l in losses]}")
