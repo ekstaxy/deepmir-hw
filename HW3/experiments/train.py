@@ -282,44 +282,30 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
 
 
 def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
-    """
-    Convert CPWord tokens to MIDI and save
+    # Concatenate if list of arrays
+    if isinstance(tokens, list):
+        tokens = np.concatenate(tokens, axis=0)
     
-    Args:
-        tokens: numpy array of shape [seq_len, 8]
-        tokenizer: CPWord tokenizer
-        output_path: path to save MIDI file
+    # Clean tokens - remove BOS/EOS/PAD
+    bos_ids = [tokenizer.vocab[i].get("BOS_None", -1) for i in range(8)]
+    eos_ids = [tokenizer.vocab[i].get("EOS_None", -1) for i in range(8)]
+    pad_ids = [tokenizer.vocab[i].get("PAD_None", -1) for i in range(8)]
     
-    Returns:
-        bool: True if successful, False otherwise
-    """
-
-    # Convert NaN or invalid values to padding tokens
-    if np.isnan(tokens).any():
-        print(f"  Warning: Found NaN values, replacing with PAD tokens")
-        pad_tokens = np.array([tokenizer.vocab[i].get("PAD_None", 0) for i in range(8)])
-        nan_mask = np.isnan(tokens)
-        for i in range(8):
-            tokens[nan_mask[:, i], i] = pad_tokens[i]
+    # Remove special tokens
+    mask = np.ones(len(tokens), dtype=bool)
+    for i, token in enumerate(tokens):
+        if np.array_equal(token, bos_ids) or np.array_equal(token, eos_ids) or np.array_equal(token, pad_ids):
+            mask[i] = False
     
-    # Ensure all values are integers
-    tokens = tokens.astype(np.int64)
+    tokens = tokens[mask]
     
-    # Clip values to valid range for each vocabulary
-    tokens = tokens.astype(np.int32)
+    # Clip to valid range
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
-
-    # # print(tokens)
-    # for token in tokens:
-    #     print([token])
-    #     print(tokenizer.token_id_type([token]))
-    # Convert to MIDI
+    
+    # Decode
     midi = tokenizer([tokens])
-
     midi.dump_midi(output_path)
-    print(f"  ✓ MIDI saved to: {output_path}")
-    return True
 
 
 def train(
