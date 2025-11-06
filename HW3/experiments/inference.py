@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from miditok import REMI, CPWord
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
+from miditok import TokSequence
 import numpy as np
 from symusic import Score
 
@@ -345,13 +346,14 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         for i in range(8):
             vocab_size = len(tokenizer.vocab[i])
             tokens[:, i] = np.clip(tokens[:, i], 0, vocab_size - 1)
-            
-        # Convert to MIDI
-        midi = tokenizer.decode(tokens)
 
-        # Save MIDI file
+        tokens = tokens.astype(np.int32)
+        for i in range(8):
+            tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
+
+        # Convert to MIDI
+        midi = tokenizer(TokSequence(ids=tokens.tolist()))
         midi.dump_midi(output_path)
-        return True
         
     except Exception as e:
         print(f"  Error converting tokens to MIDI: {e}")

@@ -12,6 +12,7 @@ from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, CPWord, TokenizerConfig
+from miditok import TokSequence 
 
 from functools import partial
 import matplotlib.pyplot as plt
@@ -304,14 +305,12 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         tokens = tokens.astype(np.int64)
         
         # Clip values to valid range for each vocabulary
+        tokens = tokens.astype(np.int32)
         for i in range(8):
-            vocab_size = len(tokenizer.vocab[i])
-            tokens[:, i] = np.clip(tokens[:, i], 0, vocab_size - 1)
-        
+            tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
+
         # Convert to MIDI
-        midi = tokenizer.decode(tokens)
-        
-        # Save MIDI file
+        midi = tokenizer(TokSequence(ids=tokens.tolist()))
         midi.dump_midi(output_path)
         print(f"  ✓ MIDI saved to: {output_path}")
         return True
