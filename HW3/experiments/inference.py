@@ -352,7 +352,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
             tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
         # Convert to MIDI
-        midi = tokenizer(TokSequence(ids=tokens))
+        midi = tokenizer([tokens])
         midi.dump_midi(output_path)
         
     except Exception as e:
