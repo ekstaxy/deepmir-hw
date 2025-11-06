@@ -12,6 +12,7 @@ from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, CPWord, TokenizerConfig
+from miditok.pytorch_data import tokens_to_tensor
 from functools import partial
 import matplotlib.pyplot as plt
 import argparse
@@ -207,6 +208,109 @@ def train_epoch_cpword(model, dataloader, optimizer, scheduler, device):
     return avg_loss
 
 
+def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_bars=32):
+    """
+    Generate a 32-bar sequence using CPWord model
+    
+    Args:
+        model: CPWordModel instance
+        tokenizer: CPWord tokenizer
+        device: torch device
+        temperature: sampling temperature
+        target_bars: number of bars to generate (default 32)
+    
+    Returns:
+        numpy array of shape [seq_len, 8] containing generated tokens
+    """
+    model.eval()
+    
+    # Get BOS token for CPWord (8-dimensional)
+    bos_token = np.array([[
+        tokenizer.vocab[i].get("BOS_None", 0) 
+        for i in range(8)
+    ]])
+    
+    # Get bar token ID from vocabulary 1 (bar vocabulary)
+    bar_token_id = tokenizer.vocab[1].get("Bar_None", None)
+    if bar_token_id is None:
+        # Try to find any Bar token
+        for key in tokenizer.vocab[1].keys():
+            if "Bar" in key:
+                bar_token_id = tokenizer.vocab[1][key]
+                break
+    
+    with torch.no_grad():
+        final_res = []
+        memory = None
+        h = None
+        
+        cnt_bar = 0
+        init_t = torch.from_numpy(bos_token).long().to(device)
+        
+        # Process BOS token
+        input_ = init_t[0, :].unsqueeze(0).unsqueeze(0)
+        final_res.append(bos_token[0, :][None, ...])
+        h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+        
+        # Generate tokens
+        max_len = 3000  # Safety limit
+        for gen_step in range(max_len):
+            # Sample next token
+            next_arr = model.forward_output_sampling(h, y_family)
+            final_res.append(next_arr[None, ...])
+            
+            # Count bars (check vocabulary index 1)
+            if bar_token_id is not None and next_arr[1] == bar_token_id:
+                cnt_bar += 1
+            
+            # Check if we've generated enough bars
+            if cnt_bar >= target_bars:
+                break
+            
+            # Continue generation
+            input_ = torch.from_numpy(next_arr).long().to(device)
+            input_ = input_.unsqueeze(0).unsqueeze(0)
+            h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+    
+    final_res = np.concatenate(final_res, axis=0)
+    print(f"  Generated sequence shape: {final_res.shape}, Bars: {cnt_bar}")
+    
+    return final_res
+
+
+def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
+    """
+    Convert CPWord tokens to MIDI and save
+    
+    Args:
+        tokens: numpy array of shape [seq_len, 8]
+        tokenizer: CPWord tokenizer
+        output_path: path to save MIDI file
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Convert numpy array to list of lists for miditok
+        tokens_list = tokens.tolist()
+        
+        # Create TokSequence - CPWord expects compound tokens
+        from miditok import TokSequence
+        tok_sequence = TokSequence(ids=tokens_list)
+        
+        # Convert to MIDI
+        midi = tokenizer.tokens_to_midi([tok_sequence])
+        
+        # Save MIDI file
+        midi.dump_midi(output_path)
+        print(f"  ✓ MIDI saved to: {output_path}")
+        return True
+        
+    except Exception as e:
+        print(f"  ✗ Error saving MIDI: {e}")
+        return False
+
+
 def train(
     model,
     train_dataset,
@@ -221,6 +325,10 @@ def train(
     model_type='cpword'
 ):
     os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    # Create results directory for inference outputs
+    results_dir = os.path.join(checkpoint_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
     
     tokenizer_type = 'CPWORD' if model_type == 'cpword' else 'REMI'
     dataloader = create_dataloader(
@@ -248,6 +356,7 @@ def train(
     print(f"  Device: {device}")
     print(f"  Model type: {model_type}")
     print(f"  Total training steps: {num_training_steps} ({len(dataloader)} batches/epoch)")
+    print(f"  Results directory: {results_dir}")
     print(f"{'='*70}\n")
     
     train_epoch_fn = train_epoch_cpword if model_type == 'cpword' else train_epoch_remi
@@ -273,7 +382,30 @@ def train(
             print(f"  ✓ Checkpoint saved: {checkpoint_path}")
             
             plot_loss_curve(losses, save_path=os.path.join(checkpoint_dir, 'loss_curve.png'))
-    
+            
+            # =====================================================================
+            # NEW: Generate inference sample at checkpoint
+            # =====================================================================
+            if model_type == 'cpword':
+                print(f"\n  Generating 32-bar inference sample...")
+                try:
+                    generated_tokens = inference_cpword_32bars(
+                        model=model,
+                        tokenizer=tokenizer,
+                        device=device,
+                        temperature=1.0,
+                        target_bars=32
+                    )
+                    
+                    # Save as MIDI
+                    midi_filename = f'inference_epoch_{epoch+1}.mid'
+                    midi_path = os.path.join(results_dir, midi_filename)
+                    save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
+                    
+                except Exception as e:
+                    print(f"  ✗ Inference failed: {e}")
+            # =====================================================================
+
     np.save(os.path.join(checkpoint_dir, 'training_losses.npy'), np.array(losses))
     
     return model, losses
