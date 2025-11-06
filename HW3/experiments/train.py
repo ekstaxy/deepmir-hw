@@ -292,32 +292,28 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     Returns:
         bool: True if successful, False otherwise
     """
-    try:
-        # Convert NaN or invalid values to padding tokens
-        if np.isnan(tokens).any():
-            print(f"  Warning: Found NaN values, replacing with PAD tokens")
-            pad_tokens = np.array([tokenizer.vocab[i].get("PAD_None", 0) for i in range(8)])
-            nan_mask = np.isnan(tokens)
-            for i in range(8):
-                tokens[nan_mask[:, i], i] = pad_tokens[i]
-        
-        # Ensure all values are integers
-        tokens = tokens.astype(np.int64)
-        
-        # Clip values to valid range for each vocabulary
-        tokens = tokens.astype(np.int32)
+    
+    # Convert NaN or invalid values to padding tokens
+    if np.isnan(tokens).any():
+        print(f"  Warning: Found NaN values, replacing with PAD tokens")
+        pad_tokens = np.array([tokenizer.vocab[i].get("PAD_None", 0) for i in range(8)])
+        nan_mask = np.isnan(tokens)
         for i in range(8):
-            tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
+            tokens[nan_mask[:, i], i] = pad_tokens[i]
+    
+    # Ensure all values are integers
+    tokens = tokens.astype(np.int64)
+    
+    # Clip values to valid range for each vocabulary
+    tokens = tokens.astype(np.int32)
+    for i in range(8):
+        tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
-        # Convert to MIDI
-        midi = tokenizer(TokSequence(ids=tokens.tolist()))
-        midi.dump_midi(output_path)
-        print(f"  ✓ MIDI saved to: {output_path}")
-        return True
-        
-    except Exception as e:
-        print(f"  ✗ Error saving MIDI: {e}")
-        return False
+    # Convert to MIDI
+    midi = tokenizer(TokSequence(ids=tokens.tolist()))
+    midi.dump_midi(output_path)
+    print(f"  ✓ MIDI saved to: {output_path}")
+    return True
 
 
 def train(
