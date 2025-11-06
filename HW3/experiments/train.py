@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate')
     parser.add_argument('--warmup_steps', type=int, default=1000, help='Warmup steps for scheduler')
     
-    parser.add_argument('--model_type', type=str, default='gpt2', choices=['gpt2', 'transformer-xl', 'cpword'])
+    parser.add_argument('--model_type', type=str, default='cpword', choices=['gpt2', 'transformer-xl', 'cpword'])
     parser.add_argument('--n_layer', type=int, default=12, help='Number of transformer layers')
     parser.add_argument('--n_embd', type=int, default=512, help='Embedding dimension')
     parser.add_argument('--n_head', type=int, default=8, help='Number of attention heads')
@@ -144,6 +144,7 @@ def train_epoch_cpword(model, dataloader, optimizer, scheduler, device):
     
     for batch in dataloader:
         x = batch['x'].to(device)
+        print(x)
         target = batch['target'].to(device)
         loss_mask = batch['loss_mask'].to(device)
         
