@@ -37,7 +37,7 @@ class Dataset_Pop1K7(Dataset):
             self.bos_token = self._get_cpword_special_token('BOS')
             self.eos_token = self._get_cpword_special_token('EOS')
             self.pad_token = self._get_cpword_special_token('PAD')
-            self.bar_type_id = tokenizer.vocab[3]['Bar']
+            self.bar_type_id = tokenizer.vocab[3]['Bar_None']
         
         print("Analyzing MIDI files...")
         self.valid_chunks = []
