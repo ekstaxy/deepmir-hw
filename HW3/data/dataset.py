@@ -45,7 +45,6 @@ class Dataset_Pop1K7(Dataset):
         for file_idx, midi_file in enumerate(midi_files):
             try:
                 tokens = tokenizer(midi_file)
-                print(tokens)
                 if isinstance(tokens, list):
                     tokens = tokens[0]
                 
@@ -77,7 +76,7 @@ class Dataset_Pop1K7(Dataset):
         token_str = f"{token_type}_None"
         return [
             self.tokenizer.vocab[i][token_str]
-            for i in range(7)
+            for i in range(8)
         ]
         
     def __len__(self):
@@ -139,7 +138,7 @@ class Dataset_Pop1K7(Dataset):
     def _process_cpword_tokens(self, tokens):
         token_ids = np.array(tokens.ids)
         
-        for i in range(7):
+        for i in range(8):
             vocab_size = len(self.tokenizer.vocab[i])
             mask = token_ids[:, i] >= vocab_size
             if mask.any():
