@@ -387,9 +387,12 @@ def train(
                 # Save as MIDI
                 midi_filename = f'inference_epoch_{epoch+1}.mid'
                 midi_path = os.path.join(results_dir, midi_filename)
-                save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
-
-                print(f"  ✓ Inference MIDI saved: {midi_path}")
+                try:
+                    save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
+                except Exception as e:
+                    print(f"  ✗ Error saving MIDI: {e}")
+                else:
+                    print(f"  ✓ Inference MIDI saved: {midi_path}")
             # =====================================================================
 
     np.save(os.path.join(checkpoint_dir, 'training_losses.npy'), np.array(losses))
@@ -406,7 +409,7 @@ def main():
     
     # Tokenizer configuration
     TOKENIZER_PARAMS = {
-        "pitch_range": (21, 109),
+        "pitch_range": (0, 127),
         "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
         "num_velocities": 64,
         "use_velocities": True,
