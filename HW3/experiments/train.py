@@ -286,18 +286,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     if isinstance(tokens, list):
         tokens = np.concatenate(tokens, axis=0)
     
-    # Clean tokens - remove BOS/EOS/PAD
-    bos_ids = [tokenizer.vocab[i].get("BOS_None", -1) for i in range(8)]
-    eos_ids = [tokenizer.vocab[i].get("EOS_None", -1) for i in range(8)]
-    pad_ids = [tokenizer.vocab[i].get("PAD_None", -1) for i in range(8)]
-    
-    # Remove special tokens
-    mask = np.ones(len(tokens), dtype=bool)
-    for i, token in enumerate(tokens):
-        if np.array_equal(token, bos_ids) or np.array_equal(token, eos_ids) or np.array_equal(token, pad_ids):
-            mask[i] = False
-    
-    tokens = tokens[mask]
+    tokens = np.where(tokens < 4, 4, tokens)
 
 
     
@@ -306,7 +295,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
     
     print(tokens)
-    
+
     # Decode
     midi = tokenizer([tokens])
     midi.dump_midi(output_path)
