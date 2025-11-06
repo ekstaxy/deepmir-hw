@@ -273,6 +273,7 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
     
     final_res = np.concatenate(final_res, axis=0)
+    print(final_res)
     print(f"  Generated sequence shape: {final_res.shape}, Bars: {cnt_bar}")
     
     return final_res
