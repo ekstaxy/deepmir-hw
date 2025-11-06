@@ -275,7 +275,7 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
     
     final_res = np.concatenate(final_res, axis=0)
-    print(final_res)
+    # print(final_res)
     print(f"  Generated sequence shape: {final_res.shape}, Bars: {cnt_bar}")
     
     return final_res
@@ -310,7 +310,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
-    print(tokens)
+    # print(tokens)
     for token in tokens[7]:
         print(tokenizer.token_id_type(token))
     # Convert to MIDI
