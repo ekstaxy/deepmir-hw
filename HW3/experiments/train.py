@@ -47,7 +47,7 @@ def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=2, tokeni
     if tokenizer_type == 'REMI':
         collate_fn = partial(collate_fn_dynamic, pad_id=tokenizer["PAD_None"], tokenizer_type='REMI')
     else:
-        pad_token = [tokenizer.vocab[i].event_to_token.get("PAD_None", 0) for i in range(7)]
+        pad_token = [tokenizer.vocab["PAD_None"] for i in range(8)]
         collate_fn = partial(collate_fn_dynamic, pad_id=pad_token, tokenizer_type='CPWORD')
     
     return DataLoader(
@@ -84,7 +84,7 @@ def create_model(model_type='gpt2', tokenizer=None, **kwargs):
     elif model_type == 'transformer-xl':
         model = TransformerXL(**kwargs)
     elif model_type == 'cpword':
-        n_token = [len(tokenizer.vocab[i]) for i in range(7)]
+        n_token = [len(tokenizer.vocab[i]) for i in range(8)]
         model = CPWordModel(n_token=n_token, is_training=True)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
@@ -266,7 +266,7 @@ def main():
     else:
         tokenizer = REMI(TokenizerConfig(**TOKENIZER_PARAMS))
     
-    print(f"Vocabulary size: {len(tokenizer.vocab) if args.model_type != 'cpword' else [len(tokenizer.vocab[i]) for i in range(7)]}")
+    print(f"Vocabulary size: {len(tokenizer.vocab) if args.model_type != 'cpword' else [len(tokenizer.vocab[i]) for i in range(8)]}")
     
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     tokenizer.save_params(os.path.join(args.checkpoint_dir, 'tokenizer_config.json'))
