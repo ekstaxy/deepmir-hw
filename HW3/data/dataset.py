@@ -75,7 +75,7 @@ class Dataset_Pop1K7(Dataset):
     def _get_cpword_special_token(self, token_type):
         token_str = f"{token_type}_None"
         return [
-            self.tokenizer.vocab[i].event_to_token.get(token_str, 0)
+            self.tokenizer.vocab[i].get(token_str, 0)  # Changed: removed .event_to_token
             for i in range(7)
         ]
     
