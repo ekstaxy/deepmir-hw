@@ -312,7 +312,8 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
 
     # print(tokens)
     for token in tokens[7]:
-        print(tokenizer.token_id_type(token))
+        print([token])
+        print(tokenizer.token_id_type([token]))
     # Convert to MIDI
     midi = tokenizer([tokens])
 
