@@ -80,7 +80,7 @@ def create_scheduler(optimizer, num_training_steps, num_warmup_steps=1000):
     return scheduler
 
 
-def create_model(model_type='gpt2', tokenizer=None, **kwargs):
+def create_model(model_type='cpword', tokenizer=None, **kwargs):
     """Create model based on type"""
     if model_type == 'gpt2':
         model = GPT2(**kwargs)
@@ -218,7 +218,7 @@ def train(
     save_every=20,
     warmup_steps=1000,
     tokenizer=None,
-    model_type='gpt2'
+    model_type='cpword'
 ):
     os.makedirs(checkpoint_dir, exist_ok=True)
     

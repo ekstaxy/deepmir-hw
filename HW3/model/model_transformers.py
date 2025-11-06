@@ -242,13 +242,13 @@ class CPWordModel(nn.Module):
         # Adjusted based on vocabulary sizes: [6, 38, 156, 128, 101, 173, 36, 37]
         self.emb_sizes = [
             32,   # Family (small vocab: 6 tokens)
-            64,   # Bar (small vocab: 38 tokens)
-            256,  # Pitch (large vocab: 156 tokens) 
-            128,  # Velocity (medium vocab: 128 tokens)
-            128,  # Duration (medium vocab: 101 tokens)
-            256,  # Chord (large vocab: 173 tokens)
-            64,   # Rest (small vocab: 36 tokens)
-            64,   # Tempo (small vocab: 37 tokens)
+            128,   # Bar (small vocab: 38 tokens)
+            512,  # Pitch (large vocab: 156 tokens) 
+            512,  # Velocity (medium vocab: 128 tokens)
+            512,  # Duration (medium vocab: 101 tokens)
+            512,  # Chord (large vocab: 173 tokens)
+            256,   # Rest (small vocab: 36 tokens)
+            256,   # Tempo (small vocab: 37 tokens)
         ]
         
         print(f"Model configuration:")
