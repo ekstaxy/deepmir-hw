@@ -544,10 +544,10 @@ if __name__ == "__main__":
         eos_token_id=1,
         pad_token_id=2,
     )
-    print(f"GPT-2 Model created: {model.num_parameters():,} parameters")
-    gpt2_memory = estimate_gpu_memory(model, batch_size=32, seq_len=1024)
-    print(f"Estimated GPU memory for GPT-2: {gpt2_memory:.2f} MB")
-    
+    print(f"CPWord Model created: {model.num_parameters():,} parameters")
+    cpword_memory = estimate_gpu_memory(model, batch_size=32, seq_len=1024)
+    print(f"Estimated GPU memory for CPWord: {cpword_memory:.2f} MB")
+
     # # Test Transformer-XL
     # model_xl = create_model(
     #     model_type='transformer-xl',

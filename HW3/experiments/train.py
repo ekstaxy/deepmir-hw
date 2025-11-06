@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
-from model.model_transformers import GPT2, TransformerXL
+from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, TokenizerConfig
 from functools import partial
@@ -83,12 +83,14 @@ def create_scheduler(optimizer, num_training_steps, num_warmup_steps=1000):
     return scheduler
 
 
-def create_model(model_type='gpt2', **kwargs):
+def create_model(model_type='CPWord', **kwargs):
     """Factory function to create model"""
     if model_type == 'gpt2':
         model = GPT2(**kwargs)
     elif model_type == 'transformer-xl':
         model = TransformerXL(**kwargs)
+    elif model_type == 'CPWord':
+        model = CPWordModel(n_token=kwargs.get('vocab_size'), is_training=True) 
     else:
         raise ValueError(f"Unknown model type: {model_type}")
     return model
