@@ -311,7 +311,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
     # print(tokens)
-    for token in tokens[7]:
+    for token in tokens:
         print([token])
         print(tokenizer.token_id_type([token]))
     # Convert to MIDI
