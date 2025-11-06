@@ -6,6 +6,7 @@ project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
 import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
 import torch
 from torch.utils.data import DataLoader
 from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
@@ -309,6 +310,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
+    print(tokens)
     # Convert to MIDI
     midi = tokenizer([tokens])
     midi.dump_midi(output_path)
