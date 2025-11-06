@@ -292,6 +292,22 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         bool: True if successful, False otherwise
     """
     try:
+        # Convert NaN or invalid values to padding tokens
+        if np.isnan(tokens).any():
+            print(f"  Warning: Found NaN values, replacing with PAD tokens")
+            pad_tokens = np.array([tokenizer.vocab[i].get("PAD_None", 0) for i in range(8)])
+            nan_mask = np.isnan(tokens)
+            for i in range(8):
+                tokens[nan_mask[:, i], i] = pad_tokens[i]
+        
+        # Ensure all values are integers
+        tokens = tokens.astype(np.int64)
+        
+        # Clip values to valid range for each vocabulary
+        for i in range(8):
+            vocab_size = len(tokenizer.vocab[i])
+            tokens[:, i] = np.clip(tokens[:, i], 0, vocab_size - 1)
+        
         # Convert to MIDI
         midi = tokenizer.decode([tokens])
         
