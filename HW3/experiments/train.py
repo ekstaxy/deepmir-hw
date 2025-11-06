@@ -292,7 +292,7 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     Returns:
         bool: True if successful, False otherwise
     """
-    
+
     # Convert NaN or invalid values to padding tokens
     if np.isnan(tokens).any():
         print(f"  Warning: Found NaN values, replacing with PAD tokens")
@@ -393,22 +393,20 @@ def train(
             # =====================================================================
             if model_type == 'cpword':
                 print(f"\n  Generating 32-bar inference sample...")
-                try:
-                    generated_tokens = inference_cpword_32bars(
-                        model=model,
-                        tokenizer=tokenizer,
-                        device=device,
-                        temperature=1.0,
-                        target_bars=32
-                    )
-                    
-                    # Save as MIDI
-                    midi_filename = f'inference_epoch_{epoch+1}.mid'
-                    midi_path = os.path.join(results_dir, midi_filename)
-                    save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
-                    
-                except Exception as e:
-                    print(f"  ✗ Inference failed: {e}")
+                generated_tokens = inference_cpword_32bars(
+                    model=model,
+                    tokenizer=tokenizer,
+                    device=device,
+                    temperature=1.0,
+                    target_bars=32
+                )
+                
+                # Save as MIDI
+                midi_filename = f'inference_epoch_{epoch+1}.mid'
+                midi_path = os.path.join(results_dir, midi_filename)
+                save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
+
+                print(f"  ✓ Inference MIDI saved: {midi_path}")
             # =====================================================================
 
     np.save(os.path.join(checkpoint_dir, 'training_losses.npy'), np.array(losses))
