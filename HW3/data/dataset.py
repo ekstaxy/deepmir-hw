@@ -45,6 +45,7 @@ class Dataset_Pop1K7(Dataset):
         for file_idx, midi_file in enumerate(midi_files):
             try:
                 tokens = tokenizer(midi_file)
+                print(tokens)
                 if isinstance(tokens, list):
                     tokens = tokens[0]
                 
@@ -56,7 +57,7 @@ class Dataset_Pop1K7(Dataset):
                 else:
                     bar_positions = [
                         i for i, token_compound in enumerate(tokens.ids)
-                        if token_compound[3] == self.bar_type_id
+                        if token_compound[1] == self.bar_type_id
                     ]
                 
                 num_bars = len(bar_positions)
