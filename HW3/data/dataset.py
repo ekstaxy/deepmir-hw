@@ -37,7 +37,7 @@ class Dataset_Pop1K7(Dataset):
             self.bos_token = self._get_cpword_special_token('BOS')
             self.eos_token = self._get_cpword_special_token('EOS')
             self.pad_token = self._get_cpword_special_token('PAD')
-            self.bar_type_id = tokenizer.vocab[3].event_to_token['Bar']
+            self.bar_type_id = tokenizer.vocab['Bar']
         
         print("Analyzing MIDI files...")
         self.valid_chunks = []
@@ -74,10 +74,8 @@ class Dataset_Pop1K7(Dataset):
     
     def _get_cpword_special_token(self, token_type):
         token_str = f"{token_type}_None"
-        return [
-            self.tokenizer.vocab[i].get(token_str, 0)  # Changed: removed .event_to_token
-            for i in range(7)
-        ]
+        return self.tokenizer.vocab[token_str]
+
     
     def __len__(self):
         return len(self.valid_chunks)
