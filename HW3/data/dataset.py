@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from miditok import REMI, CPWORD, TokenizerConfig
+from miditok import REMI, CPWord, TokenizerConfig
 from symusic import Score
 from pathlib import Path
 import random
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     if args.tokenizer_type == "REMI":
         tokenizer = REMI(config)
     else:
-        tokenizer = CPWORD(config)
+        tokenizer = CPWord(config)
 
     dataset = Dataset_Pop1K7(
         midi_files=midi_files,

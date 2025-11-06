@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root to path before importing local modules
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
@@ -12,58 +11,55 @@ from torch.utils.data import DataLoader
 from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
-from miditok import REMI, TokenizerConfig
+from miditok import REMI, CPWord, TokenizerConfig
 from functools import partial
 import matplotlib.pyplot as plt
 import argparse
 
 
 def parse_args():
-    """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Train music generation model')
     
-    # Training parameters
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size for training')
     parser.add_argument('--num_epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate')
     parser.add_argument('--warmup_steps', type=int, default=1000, help='Warmup steps for scheduler')
     
-    # Model parameters
-    parser.add_argument('--model_type', type=str, default='gpt2', choices=['gpt2', 'transformer-xl'])
+    parser.add_argument('--model_type', type=str, default='gpt2', choices=['gpt2', 'transformer-xl', 'cpword'])
     parser.add_argument('--n_layer', type=int, default=12, help='Number of transformer layers')
     parser.add_argument('--n_embd', type=int, default=512, help='Embedding dimension')
     parser.add_argument('--n_head', type=int, default=8, help='Number of attention heads')
     parser.add_argument('--max_seq_len', type=int, default=1024, help='Maximum sequence length')
     
-    # Data parameters
     parser.add_argument('--bars_per_chunk', type=int, default=32, help='Bars per training chunk')
     parser.add_argument('--midi_dir', type=str, default='/kaggle/input/pop1k7/Pop1K7/midi_analyzed')
-    parser.add_argument('--num_files', type=int, default=None, help='Limit number of MIDI files (for testing)')
+    parser.add_argument('--num_files', type=int, default=None, help='Limit number of MIDI files')
     
-    # Checkpoint parameters
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints', help='Checkpoint directory')
     parser.add_argument('--save_every', type=int, default=20, help='Save checkpoint every N epochs')
     
-    # Device
-    parser.add_argument('--device', type=str, default='cuda', help='Device to use (cuda/cpu)')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to use')
     
     return parser.parse_args()
 
 
-def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=2, tokenizer=None):
-    """Create dataloader with proper collate function"""
-    collate_fn = partial(collate_fn_dynamic, pad_id=tokenizer["PAD_None"])
+def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=2, tokenizer=None, tokenizer_type='REMI'):
+    if tokenizer_type == 'REMI':
+        collate_fn = partial(collate_fn_dynamic, pad_id=tokenizer["PAD_None"], tokenizer_type='REMI')
+    else:
+        pad_token = [tokenizer.vocab[i].event_to_token.get("PAD_None", 0) for i in range(7)]
+        collate_fn = partial(collate_fn_dynamic, pad_id=pad_token, tokenizer_type='CPWORD')
+    
     return DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=num_workers,
-        collate_fn=collate_fn  
+        collate_fn=collate_fn
     )
-    
+
 
 def create_optimizer(model, lr=5e-4, weight_decay=0.01):
-    """AdamW optimizer with weight decay"""
     return torch.optim.AdamW(
         model.parameters(), 
         lr=lr,
@@ -74,7 +70,6 @@ def create_optimizer(model, lr=5e-4, weight_decay=0.01):
 
 
 def create_scheduler(optimizer, num_training_steps, num_warmup_steps=1000):
-    """Cosine scheduler with warmup"""
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
         num_warmup_steps=num_warmup_steps,
@@ -83,21 +78,20 @@ def create_scheduler(optimizer, num_training_steps, num_warmup_steps=1000):
     return scheduler
 
 
-def create_model(model_type='CPWord', **kwargs):
-    """Factory function to create model"""
+def create_model(model_type='gpt2', tokenizer=None, **kwargs):
     if model_type == 'gpt2':
         model = GPT2(**kwargs)
     elif model_type == 'transformer-xl':
         model = TransformerXL(**kwargs)
-    elif model_type == 'CPWord':
-        model = CPWordModel(n_token=kwargs.get('vocab_size'), is_training=True) 
+    elif model_type == 'cpword':
+        n_token = [len(tokenizer.vocab[i]) for i in range(7)]
+        model = CPWordModel(n_token=n_token, is_training=True)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
     return model
 
 
 def plot_loss_curve(losses, save_path='./checkpoints/loss_curve.png'):
-    """Plot and save loss curve"""
     plt.figure(figsize=(10, 6))
     plt.plot(losses, linewidth=2)
     plt.xlabel('Epoch', fontsize=12)
@@ -110,42 +104,58 @@ def plot_loss_curve(losses, save_path='./checkpoints/loss_curve.png'):
     print(f"Loss curve saved to {save_path}")
 
 
-def train_epoch(model, dataloader, optimizer, scheduler, device):
-    """
-    Train one epoch - unsupervised next-token prediction
-    
-    ✅ Uses teacher forcing (groundtruth tokens as input)
-    ✅ Outputs softmax distribution over vocabulary
-    ✅ Compares with one-hot groundtruth using cross entropy
-    """
+def train_epoch_remi(model, dataloader, optimizer, scheduler, device):
     model.train()
     total_loss = 0.0
     num_batches = 0
     
     for batch in dataloader:
-        # Batch has: input_ids, labels (shifted by 1), attention_mask
         input_ids = batch['input_ids'].to(device)
-        labels = batch['labels'].to(device)  # Groundtruth for next token
+        labels = batch['labels'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         
-        # Forward pass
-        # Model outputs logits (before softmax) for each position
         outputs = model(
-            input_ids=input_ids,  # Teacher forcing: use groundtruth as input
+            input_ids=input_ids,
             attention_mask=attention_mask,
-            labels=labels  # Model computes cross-entropy automatically
+            labels=labels
         )
         
-        # Loss is cross-entropy between:
-        # - softmax(logits) [model's predicted distribution]
-        # - one-hot(labels) [groundtruth distribution]
         loss = outputs.loss
         
-        # Backward pass
         optimizer.zero_grad()
         loss.backward()
         
-        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        
+        optimizer.step()
+        scheduler.step()
+        
+        total_loss += loss.item()
+        num_batches += 1
+    
+    avg_loss = total_loss / num_batches
+    return avg_loss
+
+
+def train_epoch_cpword(model, dataloader, optimizer, scheduler, device):
+    model.train()
+    total_loss = 0.0
+    num_batches = 0
+    
+    for batch in dataloader:
+        x = batch['x'].to(device)
+        target = batch['target'].to(device)
+        loss_mask = batch['loss_mask'].to(device)
+        
+        loss_tempo, loss_chord, loss_barbeat, loss_type, loss_pitch, loss_duration, loss_velocity = model.train_step(
+            x, target, loss_mask
+        )
+        
+        loss = loss_tempo + loss_chord + loss_barbeat + loss_type + loss_pitch + loss_duration + loss_velocity
+        
+        optimizer.zero_grad()
+        loss.backward()
+        
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         
         optimizer.step()
@@ -168,40 +178,39 @@ def train(
     checkpoint_dir='./checkpoints',
     save_every=20,
     warmup_steps=1000,
-    tokenizer=None
+    tokenizer=None,
+    model_type='gpt2'
 ):
-    """Complete training function with loss visualization"""
-    
-    # Create checkpoint directory
     os.makedirs(checkpoint_dir, exist_ok=True)
     
-    # Create dataloader
-    dataloader = create_dataloader(train_dataset, batch_size=batch_size, tokenizer=tokenizer)
+    tokenizer_type = 'CPWORD' if model_type == 'cpword' else 'REMI'
+    dataloader = create_dataloader(
+        train_dataset, 
+        batch_size=batch_size, 
+        tokenizer=tokenizer,
+        tokenizer_type=tokenizer_type
+    )
     
-    # Create optimizer
     optimizer = create_optimizer(model, lr=lr)
     
-    # Create scheduler
     num_training_steps = len(dataloader) * num_epochs
     scheduler = create_scheduler(optimizer, num_training_steps, num_warmup_steps=warmup_steps)
     
-    # Move model to device
     model = model.to(device)
     
-    # Track losses
     losses = []
     
-    print(f"Training Configuration: epochs={num_epochs}, batch_size={batch_size}, lr={lr}, warmup_steps={warmup_steps}, device={device}")
+    print(f"Training Configuration: epochs={num_epochs}, batch_size={batch_size}, lr={lr}, warmup_steps={warmup_steps}, device={device}, model_type={model_type}")
     print(f"Total training steps: {num_training_steps} ({len(dataloader)} batches/epoch)")
     
-    # Training loop
+    train_epoch_fn = train_epoch_cpword if model_type == 'cpword' else train_epoch_remi
+    
     for epoch in range(num_epochs):
-        avg_loss = train_epoch(model, dataloader, optimizer, scheduler, device)
+        avg_loss = train_epoch_fn(model, dataloader, optimizer, scheduler, device)
         losses.append(avg_loss)
         
         print(f"Epoch {epoch+1}/{num_epochs} - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.2e}")
         
-        # Save checkpoint
         if (epoch + 1) % save_every == 0 or epoch == num_epochs - 1:
             checkpoint_path = os.path.join(checkpoint_dir, f'checkpoint_epoch_{epoch+1}.pt')
             torch.save({
@@ -214,10 +223,8 @@ def train(
             }, checkpoint_path)
             print(f"Checkpoint saved: {checkpoint_path}")
             
-            # Plot loss curve
             plot_loss_curve(losses, save_path=os.path.join(checkpoint_dir, 'loss_curve.png'))
     
-    # Save final loss data
     np.save(os.path.join(checkpoint_dir, 'training_losses.npy'), np.array(losses))
     
     return model, losses
@@ -226,7 +233,6 @@ def train(
 def main():
     args = parse_args()
     
-    # Tokenizer configuration
     TOKENIZER_PARAMS = {
         "pitch_range": (21, 109),
         "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
@@ -244,11 +250,9 @@ def main():
         "tempo_range": (40, 220),
     }
     
-    # Get MIDI files
     midi_dir = Path(args.midi_dir)
     all_midi_files = list(midi_dir.glob("**/*.mid")) + list(midi_dir.glob("**/*.midi"))
     
-    # Truncate dataset if specified
     if args.num_files is not None:
         midi_files = all_midi_files[:args.num_files]
         print(f"TEST MODE: Using {len(midi_files)}/{len(all_midi_files)} MIDI files")
@@ -256,19 +260,21 @@ def main():
         midi_files = all_midi_files
         print(f"Found {len(midi_files)} MIDI files")
     
-    # Setup tokenizer
-    tokenizer = REMI(TokenizerConfig(**TOKENIZER_PARAMS))
-    print(f"Vocabulary size: {len(tokenizer.vocab)}")
+    if args.model_type == 'cpword':
+        tokenizer = CPWord(TokenizerConfig(**TOKENIZER_PARAMS))
+    else:
+        tokenizer = REMI(TokenizerConfig(**TOKENIZER_PARAMS))
     
-    # Save tokenizer config
+    print(f"Vocabulary size: {len(tokenizer.vocab) if args.model_type != 'cpword' else [len(tokenizer.vocab[i]) for i in range(7)]}")
+    
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     tokenizer.save_params(os.path.join(args.checkpoint_dir, 'tokenizer_config.json'))
     
-    # Create dataset
     print(f"Creating dataset: bars_per_chunk={args.bars_per_chunk}")
     dataset = Dataset_Pop1K7(
         midi_files, 
-        tokenizer, 
+        tokenizer,
+        tokenizer_type='CPWORD' if args.model_type == 'cpword' else 'REMI',
         bars_per_chunk=args.bars_per_chunk,
         pitch_augment_range=(-5, 5),
         velocity_augment_range=(-10, 10),
@@ -277,38 +283,43 @@ def main():
     
     print(f"Dataset created: {len(dataset)} chunks")
     
-    # Check sequence lengths
     sample_lengths = []
     for i in range(min(100, len(dataset))):
         sample = dataset[i]
-        sample_lengths.append(len(sample))
+        if args.model_type == 'cpword':
+            sample_lengths.append(sample.shape[0])
+        else:
+            sample_lengths.append(len(sample))
     
-    print(f"Sequence length stats (n={len(sample_lengths)}): min={min(sample_lengths)}, max={max(sample_lengths)}, mean={np.mean(sample_lengths):.1f}, model_max={args.max_seq_len}")
+    print(f"Sequence length stats: min={min(sample_lengths)}, max={max(sample_lengths)}, mean={np.mean(sample_lengths):.1f}, model_max={args.max_seq_len}")
     
-    if max(sample_lengths) > args.max_seq_len:
-        print(f"WARNING: Some sequences exceed max_seq_len and will be truncated")
-    
-    # Create model
     print(f"Creating model: type={args.model_type}, layers={args.n_layer}, embd={args.n_embd}, heads={args.n_head}")
-    model = create_model(
-        model_type=args.model_type,
-        vocab_size=len(tokenizer.vocab),
-        max_seq_len=args.max_seq_len,
-        n_layer=args.n_layer,
-        n_embd=args.n_embd,
-        n_head=args.n_head,
-        bos_token_id=tokenizer["BOS_None"],
-        eos_token_id=tokenizer["EOS_None"],
-        pad_token_id=tokenizer["PAD_None"],
-    )
-    print(f"Model created: {model.num_parameters():,} parameters")
     
-    # Check device
+    if args.model_type == 'cpword':
+        model = create_model(
+            model_type=args.model_type,
+            tokenizer=tokenizer
+        )
+    else:
+        model = create_model(
+            model_type=args.model_type,
+            vocab_size=len(tokenizer.vocab),
+            max_seq_len=args.max_seq_len,
+            n_layer=args.n_layer,
+            n_embd=args.n_embd,
+            n_head=args.n_head,
+            bos_token_id=tokenizer["BOS_None"],
+            eos_token_id=tokenizer["EOS_None"],
+            pad_token_id=tokenizer["PAD_None"],
+        )
+    
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Model created: {total_params:,} parameters")
+    
     device = args.device if torch.cuda.is_available() else 'cpu'
     if device == 'cpu':
         print("WARNING: Training on CPU")
     
-    # Train
     print("Starting training...")
     trained_model, losses = train(
         model=model,
@@ -320,7 +331,8 @@ def main():
         checkpoint_dir=args.checkpoint_dir,
         save_every=args.save_every,
         warmup_steps=args.warmup_steps,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        model_type=args.model_type
     )
     
     print(f"Training complete. Final loss: {losses[-1]:.4f}")
