@@ -291,11 +291,11 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     # Clip to valid range
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
-    
-    print(tokens)
+
+    print(tokens.tolist())
 
     # Decode
-    midi = tokenizer([tokens.tolist()])
+    midi = tokenizer(TokSequence(ids=tokens.tolist()))
     midi.dump_midi(output_path)
 
 
