@@ -166,9 +166,12 @@ def train_epoch_cpword(model, dataloader, optimizer, scheduler, device):
         assert x.shape[2] == 8, f"X has wrong shape: {x.shape}"
         assert target.shape[2] == 8, f"Target has wrong shape: {target.shape}"
         
+        # Get the actual model (unwrap DataParallel if needed)
+        actual_model = model.module if hasattr(model, 'module') else model
+        
         # Get losses for all 8 vocabularies
         loss_family, loss_bar, loss_pitch, loss_velocity, loss_duration, \
-        loss_chord, loss_rest, loss_tempo = model.train_step(x, target, loss_mask)
+        loss_chord, loss_rest, loss_tempo = actual_model.train_step(x, target, loss_mask)
         
         # Total loss is sum of all vocabulary losses
         loss = loss_family + loss_bar + loss_pitch + loss_velocity + \
@@ -226,6 +229,9 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
     """
     model.eval()
     
+    # Unwrap DataParallel if needed
+    actual_model = model.module if hasattr(model, 'module') else model
+    
     # Get BOS token for CPWord (8-dimensional)
     bos_token = np.array([[
         tokenizer.vocab[i].get("BOS_None", 0) 
@@ -252,13 +258,13 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
         # Process BOS token
         input_ = init_t[0, :].unsqueeze(0).unsqueeze(0)
         final_res.append(bos_token[0, :][None, ...])
-        h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+        h, y_family, memory = actual_model.forward_hidden(input_, memory, is_training=False)
         
         # Generate tokens
         max_len = 3000  # Safety limit
         for gen_step in range(max_len):
             # Sample next token
-            next_arr = model.forward_output_sampling(h, y_family)
+            next_arr = actual_model.forward_output_sampling(h, y_family)
             final_res.append(next_arr[None, ...])
             
             # Count bars (check vocabulary index 1)
@@ -272,7 +278,7 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
             # Continue generation
             input_ = torch.from_numpy(next_arr).long().to(device)
             input_ = input_.unsqueeze(0).unsqueeze(0)
-            h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+            h, y_family, memory = actual_model.forward_hidden(input_, memory, is_training=False)
     
     final_res = np.concatenate(final_res, axis=0)
     # print(final_res)
