@@ -13,7 +13,6 @@ from data.dataset import Dataset_Pop1K7, collate_fn_dynamic
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
 from transformers import get_cosine_schedule_with_warmup
 from miditok import REMI, CPWord, TokenizerConfig
-from miditok import TokSequence 
 
 from functools import partial
 import matplotlib.pyplot as plt
@@ -40,6 +39,7 @@ def parse_args():
     
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints', help='Checkpoint directory')
     parser.add_argument('--save_every', type=int, default=20, help='Save checkpoint every N epochs')
+    parser.add_argument('--resume', type=str, default=None, help='Path to checkpoint to resume from')
     
     parser.add_argument('--device', type=str, default='cuda', help='Device to use')
     
@@ -310,7 +310,8 @@ def train(
     save_every=20,
     warmup_steps=1000,
     tokenizer=None,
-    model_type='cpword'
+    model_type='cpword',
+    resume_checkpoint=None
 ):
     os.makedirs(checkpoint_dir, exist_ok=True)
     
@@ -327,13 +328,22 @@ def train(
     )
     
     optimizer = create_optimizer(model, lr=lr)
-    
     num_training_steps = len(dataloader) * num_epochs
     scheduler = create_scheduler(optimizer, num_training_steps, num_warmup_steps=warmup_steps)
     
-    model = model.to(device)
-    
+    start_epoch = 0
     losses = []
+    
+    if resume_checkpoint:
+        checkpoint = torch.load(resume_checkpoint)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        losses = checkpoint['losses']
+        print(f"Resumed from epoch {checkpoint['epoch']}, loss: {checkpoint['loss']:.4f}")
+    
+    model = model.to(device)
     
     print(f"\n{'='*70}")
     print(f"Training Configuration:")
@@ -349,7 +359,7 @@ def train(
     
     train_epoch_fn = train_epoch_cpword if model_type == 'cpword' else train_epoch_remi
     
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         print(f"Epoch {epoch+1}/{num_epochs}")
         avg_loss = train_epoch_fn(model, dataloader, optimizer, scheduler, device)
         losses.append(avg_loss)
@@ -536,7 +546,8 @@ def main():
         save_every=args.save_every,
         warmup_steps=args.warmup_steps,
         tokenizer=tokenizer,
-        model_type=args.model_type
+        model_type=args.model_type,
+        resume_checkpoint=args.resume
     )
     
     print(f"\n{'='*70}")

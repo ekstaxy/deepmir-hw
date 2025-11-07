@@ -151,8 +151,8 @@ class Dataset_Pop1K7(Dataset):
         
         chunk = self._extract_chunk(token_ids, bar_positions)
 
-        if len(chunk) > 1024:
-            chunk = chunk[:1024]
+        if len(chunk) > 2048:
+            chunk = chunk[:2048]
         
         sequence = np.vstack([
             self.bos_token,
@@ -194,7 +194,7 @@ def collate_fn_dynamic(batch, pad_id, tokenizer_type='REMI'):
 
 def _collate_remi(batch, pad_id):
     # max_len = max(len(seq) for seq in batch)
-    max_len = 1024
+    max_len = 2048 + 2
     
     padded_sequences = []
     attention_masks = []
@@ -229,7 +229,7 @@ def _collate_remi(batch, pad_id):
 
 def _collate_cpword(batch, pad_token):
     max_len = max(seq.shape[0] for seq in batch)
-    max_len  = 1024 + 2
+    max_len  = 2048 + 2
     
     padded_sequences = []
     labels = []
