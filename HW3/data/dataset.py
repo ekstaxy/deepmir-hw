@@ -65,7 +65,7 @@ class Dataset_Pop1K7(Dataset):
                     chunk_bars = min(bars_per_chunk, num_bars - start_bar)
                     if chunk_bars >= 8:
                         self.valid_chunks.append((file_idx, start_bar, chunk_bars))
-                
+
             except Exception as e:
                 print(f"Error processing {midi_file}: {e}")
                 continue
@@ -150,6 +150,9 @@ class Dataset_Pop1K7(Dataset):
         ]
         
         chunk = self._extract_chunk(token_ids, bar_positions)
+
+        if len(chunk) > 1024:
+            chunk = chunk[:1024]
         
         sequence = np.vstack([
             self.bos_token,
@@ -190,7 +193,8 @@ def collate_fn_dynamic(batch, pad_id, tokenizer_type='REMI'):
 
 
 def _collate_remi(batch, pad_id):
-    max_len = max(len(seq) for seq in batch)
+    # max_len = max(len(seq) for seq in batch)
+    max_len = 1024
     
     padded_sequences = []
     attention_masks = []
@@ -225,6 +229,7 @@ def _collate_remi(batch, pad_id):
 
 def _collate_cpword(batch, pad_token):
     max_len = max(seq.shape[0] for seq in batch)
+    max_len  = 1024 + 2
     
     padded_sequences = []
     labels = []

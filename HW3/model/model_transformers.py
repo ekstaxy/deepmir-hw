@@ -243,12 +243,12 @@ class CPWordModel(nn.Module):
         self.emb_sizes = [
             32,   # Family (small vocab: 6 tokens)
             128,   # Bar (small vocab: 38 tokens)
-            512,  # Pitch (large vocab: 156 tokens) 
-            512,  # Velocity (medium vocab: 128 tokens)
-            512,  # Duration (medium vocab: 101 tokens)
-            512,  # Chord (large vocab: 173 tokens)
-            256,   # Rest (small vocab: 36 tokens)
-            256,   # Tempo (small vocab: 37 tokens)
+            256,  # Pitch (large vocab: 156 tokens) 
+            256,  # Velocity (medium vocab: 128 tokens)
+            256,  # Duration (medium vocab: 101 tokens)
+            256,  # Chord (large vocab: 173 tokens)
+            128,   # Rest (small vocab: 36 tokens)
+            128,   # Tempo (small vocab: 37 tokens)
         ]
         
         print(f"Model configuration:")
@@ -533,7 +533,7 @@ class CPWordModel(nn.Module):
                 h, y_family, memory = self.forward_hidden(input_, memory, is_training=False)
 
             print('------ generate ------')
-            max_len = 2000  # Maximum generation length
+            max_len = 3000  # Maximum generation length
             for gen_step in range(max_len):
                 next_arr = self.forward_output_sampling(h, y_family)
                 final_res.append(next_arr[None, ...])

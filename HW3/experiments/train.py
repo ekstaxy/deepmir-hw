@@ -194,9 +194,9 @@ def train_epoch_cpword(model, dataloader, optimizer, scheduler, device):
         loss_accumulator['chord'] += loss_chord.item()
         loss_accumulator['rest'] += loss_rest.item()
         loss_accumulator['tempo'] += loss_tempo.item()
-        
-        # Print progress every 10 batches
-        if (batch_idx + 1) % 10 == 0:
+
+        # Print progress every 500 batches
+        if (batch_idx + 1) % 500 == 0:
             print(f"    Batch {batch_idx + 1}/{len(dataloader)}: loss={loss.item():.4f}")
     
     avg_loss = total_loss / num_batches
