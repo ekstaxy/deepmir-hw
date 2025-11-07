@@ -380,7 +380,7 @@ def generate_unconditional_remi(
         input_ids = torch.tensor([[bos_id]]).to(device)
         generated = [bos_id]
         bar_count = 0
-        max_length = 2048
+        max_length = 3096
         
         with torch.no_grad():
             while bar_count < target_bars and len(generated) < max_length:

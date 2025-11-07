@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--n_layer', type=int, default=12, help='Number of transformer layers')
     parser.add_argument('--n_embd', type=int, default=512, help='Embedding dimension')
     parser.add_argument('--n_head', type=int, default=8, help='Number of attention heads')
-    parser.add_argument('--max_seq_len', type=int, default=1024, help='Maximum sequence length')
+    parser.add_argument('--max_seq_len', type=int, default=2048, help='Maximum sequence length')
     
     parser.add_argument('--bars_per_chunk', type=int, default=32, help='Bars per training chunk')
     parser.add_argument('--midi_dir', type=str, default='/kaggle/input/pop1k7/Pop1K7/midi_analyzed')
