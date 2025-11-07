@@ -345,6 +345,11 @@ def train(
     
     model = model.to(device)
     
+    # Use DataParallel for multi-GPU
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs")
+        model = torch.nn.DataParallel(model)
+    
     print(f"\n{'='*70}")
     print(f"Training Configuration:")
     print(f"  Epochs: {num_epochs}")
@@ -369,9 +374,11 @@ def train(
         
         if (epoch + 1) % save_every == 0 or epoch == num_epochs - 1:
             checkpoint_path = os.path.join(checkpoint_dir, f'checkpoint_epoch_{epoch+1}.pt')
+            # Handle DataParallel wrapper when saving
+            model_state = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': model.state_dict(),
+                'model_state_dict': model_state,
                 'optimizer_state_dict': optimizer.state_dict(),
                 'scheduler_state_dict': scheduler.state_dict(),
                 'loss': avg_loss,
