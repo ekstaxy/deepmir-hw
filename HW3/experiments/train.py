@@ -337,13 +337,20 @@ def train(
     if resume_checkpoint:
         checkpoint = torch.load(resume_checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         losses = checkpoint['losses']
+        
+        # ⚠️ Move model to device FIRST
+        model = model.to(device)
+        
+        # Then load optimizer/scheduler states
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        
         print(f"Resumed from epoch {checkpoint['epoch']}, loss: {checkpoint['loss']:.4f}")
-    
-    model = model.to(device)
+    else:
+        # For non-resume, move model to device
+        model = model.to(device)
     
     print(f"\n{'='*70}")
     print(f"Training Configuration:")
@@ -420,7 +427,7 @@ def main():
     # Tokenizer configuration
     TOKENIZER_PARAMS = {
         "pitch_range": (0, 127),
-        "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
+        "beat_res": {   },
         "num_velocities": 64,
         "use_velocities": True,
         "special_tokens": ["PAD", "BOS", "EOS", "MASK"],
@@ -475,7 +482,7 @@ def main():
         tokenizer_type='CPWORD' if args.model_type == 'cpword' else 'REMI',
         bars_per_chunk=args.bars_per_chunk,
         pitch_augment_range=(-5, 5),
-        velocity_augment_range=(-10, 10),
+        velocity_augment_range=(-4, 4),
         augment_prob=0.5,
     )
     

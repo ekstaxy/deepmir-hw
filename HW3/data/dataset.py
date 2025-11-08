@@ -91,11 +91,10 @@ class Dataset_Pop1K7(Dataset):
                         note.pitch = max(0, min(127, note.pitch + pitch_offset))
         
         if random.random() < self.augment_prob and self.velocity_augment_range:
-            velocity_offset = random.randint(*self.velocity_augment_range)
-            if velocity_offset != 0:
-                for track in score.tracks:
-                    for note in track.notes:
-                        note.velocity = max(1, min(127, note.velocity + velocity_offset))
+            for track in score.tracks:
+                for note in track.notes:
+                    velocity_offset = random.randint(*self.velocity_augment_range)
+                    note.velocity = max(1, min(127, note.velocity + velocity_offset))
         
         return score
     
