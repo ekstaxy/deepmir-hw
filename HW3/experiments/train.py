@@ -427,7 +427,7 @@ def main():
     # Tokenizer configuration
     TOKENIZER_PARAMS = {
         "pitch_range": (0, 127),
-        "beat_res": {   },
+        "beat_res": {(0, 4): 8, (4, 12): 4, (12, 16): 8},
         "num_velocities": 64,
         "use_velocities": True,
         "special_tokens": ["PAD", "BOS", "EOS", "MASK"],
