@@ -393,23 +393,24 @@ def train(
             # =====================================================================
             if model_type == 'cpword':
                 print(f"\n  Generating 32-bar inference sample...")
-                generated_tokens = inference_cpword_32bars(
-                    model=model,
-                    tokenizer=tokenizer,
-                    device=device,
-                    temperature=1.0,
-                    target_bars=32
-                )
-                
-                # Save as MIDI
-                midi_filename = f'inference_epoch_{epoch+1}.mid'
-                midi_path = os.path.join(results_dir, midi_filename)
-                try:
-                    save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
-                except Exception as e:
-                    print(f"  ✗ Error saving MIDI: {e}")
-                else:
-                    print(f"  ✓ Inference MIDI saved: {midi_path}")
+                max_attempts = 10
+                for attempt in range(max_attempts):
+                    try:
+                        generated_tokens = inference_cpword_32bars(
+                            model=model,
+                            tokenizer=tokenizer,
+                            device=device,
+                            temperature=1.0,
+                            target_bars=32
+                        )
+                        midi_path = os.path.join(results_dir, f'inference_epoch_{epoch+1}.mid')
+                        save_cpword_tokens_as_midi(generated_tokens, tokenizer, midi_path)
+                        print(f"  ✓ Success on attempt {attempt}")
+                        break  # Success, exit loop
+                    except Exception as e:
+                        print(f"  ✗ Attempt {attempt}/{max_attempts} failed: {e}")
+                        if attempt == max_attempts:
+                            print(f"  ✗ Giving up after {max_attempts} attempts")
             # =====================================================================
 
     np.save(os.path.join(checkpoint_dir, 'training_losses.npy'), np.array(losses))
