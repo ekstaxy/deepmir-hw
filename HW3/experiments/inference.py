@@ -337,8 +337,8 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     if isinstance(tokens, list):
         tokens = np.concatenate(tokens, axis=0)
     
-    tokens = np.where(tokens < 4, 4, tokens)
-    
+    # tokens = np.where(tokens < 4, 4, tokens)
+
     np.set_printoptions(threshold=np.inf, linewidth=200)
     print([tokens.tolist()])
     
