@@ -252,12 +252,57 @@ def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda
     y_tempo = model.proj_tempo(y_)
 
     # Step 4: Sample based on family type with constraints
+    # Helper function to safely sample with constraints
+    def safe_constrained_sample(logits, min_token=5, temp=1.0):
+        """
+        Sample from logits with constraint that only tokens >= min_token are valid.
+        Handles edge cases where all logits might be -inf or very small.
+        """
+        logits_constrained = logits.squeeze().clone()
+        vocab_size = len(logits_constrained)
+
+        # Apply constraint: block tokens < min_token
+        if min_token > 0 and min_token < vocab_size:
+            # Use large negative number instead of -inf to avoid NaN issues
+            logits_constrained[:min_token] = -1e10
+
+        # Apply temperature
+        logits_scaled = logits_constrained / max(temp, 1e-8)  # Prevent division by zero
+
+        # Check if all valid tokens have very low probability
+        max_valid_logit = logits_scaled[min_token:].max().item() if min_token < vocab_size else logits_scaled.max().item()
+
+        if max_valid_logit < -50:  # All valid logits are extremely negative
+            # Fallback: uniform sampling over valid tokens
+            valid_tokens = list(range(min_token, vocab_size))
+            if len(valid_tokens) == 0:
+                return min_token if min_token < vocab_size else 0
+            return int(np.random.choice(valid_tokens))
+
+        # Compute probabilities
+        probs = torch.softmax(logits_scaled, dim=-1)
+
+        # Check for NaN or inf
+        if torch.isnan(probs).any() or torch.isinf(probs).any():
+            # Fallback: uniform sampling
+            valid_tokens = list(range(min_token, vocab_size))
+            if len(valid_tokens) == 0:
+                return min_token if min_token < vocab_size else 0
+            return int(np.random.choice(valid_tokens))
+
+        # Normal sampling
+        try:
+            return torch.multinomial(probs, 1).item()
+        except RuntimeError:
+            # Last resort fallback
+            valid_tokens = list(range(min_token, vocab_size))
+            if len(valid_tokens) == 0:
+                return min_token if min_token < vocab_size else 0
+            return int(np.random.choice(valid_tokens))
+
     if cur_word_family == 4:  # Metric event
         # Bar (vocab 1): sample with constraints
-        bar_logits = y_bar.clone()
-        bar_logits[:5] = -float('inf')  # Only allow tokens 5+
-        bar_probs = torch.softmax(bar_logits / temperature, dim=-1)
-        next_arr[1] = torch.multinomial(bar_probs, 1).item()
+        next_arr[1] = safe_constrained_sample(y_bar, min_token=5, temp=temperature)
 
         # Pitch/Velocity/Duration/Chord/Rest: Ignore (set to 4)
         next_arr[2] = 4
@@ -267,32 +312,20 @@ def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda
         next_arr[6] = 4
 
         # Tempo (vocab 7): sample with constraints
-        tempo_logits = y_tempo.clone()
-        tempo_logits[:5] = -float('inf')  # Only allow tokens 5+
-        tempo_probs = torch.softmax(tempo_logits / temperature, dim=-1)
-        next_arr[7] = torch.multinomial(tempo_probs, 1).item()
+        next_arr[7] = safe_constrained_sample(y_tempo, min_token=5, temp=temperature)
 
     else:  # Note event (family == 5)
         # Bar: Ignore
         next_arr[1] = 4
 
         # Pitch (vocab 2): sample with constraints
-        pitch_logits = y_pitch.clone()
-        pitch_logits[:5] = -float('inf')
-        pitch_probs = torch.softmax(pitch_logits / temperature, dim=-1)
-        next_arr[2] = torch.multinomial(pitch_probs, 1).item()
+        next_arr[2] = safe_constrained_sample(y_pitch, min_token=5, temp=temperature)
 
         # Velocity (vocab 3): sample with constraints
-        velocity_logits = y_velocity.clone()
-        velocity_logits[:5] = -float('inf')
-        velocity_probs = torch.softmax(velocity_logits / temperature, dim=-1)
-        next_arr[3] = torch.multinomial(velocity_probs, 1).item()
+        next_arr[3] = safe_constrained_sample(y_velocity, min_token=5, temp=temperature)
 
         # Duration (vocab 4): sample with constraints
-        duration_logits = y_duration.clone()
-        duration_logits[:5] = -float('inf')
-        duration_probs = torch.softmax(duration_logits / temperature, dim=-1)
-        next_arr[4] = torch.multinomial(duration_probs, 1).item()
+        next_arr[4] = safe_constrained_sample(y_duration, min_token=5, temp=temperature)
 
         # Chord/Rest/Tempo: Ignore
         next_arr[5] = 4
