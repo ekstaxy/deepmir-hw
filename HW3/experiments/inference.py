@@ -131,17 +131,6 @@ def generate_unconditional_cpword(
 ):
     """
     Unconditional generation for CPWord model
-    
-    Args:
-        model: CPWordModel instance
-        tokenizer: CPWord tokenizer
-        num_samples: number of sequences to generate
-        target_bars: number of bars to generate
-        device: torch device
-        temperature: sampling temperature
-    
-    Returns:
-        List of generated token sequences (each is numpy array of shape [seq_len, 8])
     """
     generated_sequences = []
     
@@ -152,12 +141,7 @@ def generate_unconditional_cpword(
     ]])
     
     # Get bar token ID from vocabulary 1 (bar vocabulary)
-    bar_token_id = tokenizer.vocab[1].get("Bar_None", None)
-    if bar_token_id is None:
-        for key in tokenizer.vocab[1].keys():
-            if "Bar" in key:
-                bar_token_id = tokenizer.vocab[1][key]
-                break
+    bar_token_id = tokenizer.vocab[1].get("Bar_None", 5)
     
     print(f"\nGenerating {num_samples} samples unconditionally...")
     print(f"  Target bars: {target_bars}")
@@ -169,130 +153,98 @@ def generate_unconditional_cpword(
         with torch.no_grad():
             final_res = []
             memory = None
-            h = None
             
             cnt_bar = 0
             init_t = torch.from_numpy(bos_token).long().to(device)
             
             # Process BOS token
             input_ = init_t[0, :].unsqueeze(0).unsqueeze(0)
-            final_res.append(bos_token[0, :][None, ...])
-            h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+            final_res.append(bos_token[0, :])
+            h, _, memory = model.forward_hidden(input_, memory, is_training=False)
             
             # Generate tokens
             max_len = 3074
             for gen_step in range(max_len):
-                # Sample next token with proper CPWord constraints
-                next_arr = sample_cpword_token_progressive(
-                    model, h, temperature, device
-                )
-                final_res.append(next_arr[None, ...])
+                # Sample with constraints
+                next_arr = sample_cpword_constrained(model, h, tokenizer, temperature, device)
+                final_res.append(next_arr)
                 
                 # Count bars
-                if bar_token_id is not None and next_arr[1] == bar_token_id:
+                if next_arr[1] == bar_token_id:
                     cnt_bar += 1
                 
                 if cnt_bar >= target_bars:
                     break
                 
                 # Continue generation
-                input_ = torch.from_numpy(next_arr).long().to(device)
-                input_ = input_.unsqueeze(0).unsqueeze(0)
-                h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+                input_ = torch.from_numpy(next_arr).long().to(device).unsqueeze(0).unsqueeze(0)
+                h, _, memory = model.forward_hidden(input_, memory, is_training=False)
         
-        final_res = np.concatenate(final_res, axis=0)
+        final_res = np.array(final_res)
         generated_sequences.append(final_res)
     
     print(f"\n✓ Generated {len(generated_sequences)} sequences")
     return generated_sequences
 
 
-def sample_cpword_token_progressive(model, h, temperature=1.0, device='cuda'):
+def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda'):
     """
-    Sample a single CPWord token progressively with proper structure constraints
-    
-    This function samples each position sequentially, passing the partially
-    constructed token to forward_output() at each step.
-    
-    Args:
-        model: CPWordModel instance
-        h: hidden state from forward_hidden
-        temperature: sampling temperature
-        device: torch device
-    
-    Returns:
-        numpy array of shape [8] representing the sampled token
+    Sample CPWord token with constraints applied AFTER getting logits from model
     """
     next_arr = np.zeros(8, dtype=np.int64)
-    current_token = torch.zeros(1, 1, 8, dtype=torch.long, device=device)
     
-    # Position 0: Sample family (Metric=4 or Note=5)
-    family_logits = model.forward_output(current_token, 0)
-    mask = torch.ones_like(family_logits[0]) * float('-inf')
-    mask[4:6] = 0  # Allow indices 4 (Metric) and 5 (Note)
-    family_logits = family_logits + mask.unsqueeze(0)
+    # Get all logits at once from the model
+    all_logits = []
+    for i in range(8):
+        logits = model.Embedding_linear[i](h).squeeze()  # [vocab_size]
+        all_logits.append(logits)
+    
+    # Sample family first
+    family_logits = all_logits[0].clone()
+    family_logits[:4] = -float('inf')  # Block special tokens
+    family_logits[6:] = -float('inf')  # Block everything except 4,5
     family_probs = torch.softmax(family_logits / temperature, dim=-1)
-    next_arr[0] = torch.multinomial(family_probs[0], 1).item()
-    current_token[0, 0, 0] = next_arr[0]
+    next_arr[0] = torch.multinomial(family_probs, 1).item()
     
-    # Sample based on family type
-    if next_arr[0] == 4:  # Metric family
-        # Position 1: Bar (5) or Position (6+)
-        logits_1 = model.forward_output(current_token, 1)
-        mask_1 = torch.ones_like(logits_1[0]) * float('-inf')
-        mask_1[5:] = 0  # Allow Bar (5) and Position_X (6+)
-        logits_1 = logits_1 + mask_1.unsqueeze(0)
+    if next_arr[0] == 4:  # Metric
+        # Position 1: Bar or Position
+        logits_1 = all_logits[1].clone()
+        logits_1[:5] = -float('inf')  # Only allow 5+
         probs_1 = torch.softmax(logits_1 / temperature, dim=-1)
-        next_arr[1] = torch.multinomial(probs_1[0], 1).item()
-        current_token[0, 0, 1] = next_arr[1]
+        next_arr[1] = torch.multinomial(probs_1, 1).item()
         
-        # Positions 2-6: Set to Ignore_None (4)
-        for i in range(2, 7):
-            next_arr[i] = 4
-            current_token[0, 0, i] = 4
+        # Positions 2-6: Ignore
+        next_arr[2:7] = 4
         
-        # Position 7: Must be valid Tempo (5+), not Ignore_None
-        logits_7 = model.forward_output(current_token, 7)
-        mask_7 = torch.ones_like(logits_7[0]) * float('-inf')
-        mask_7[5:] = 0  # Allow Tempo_X (5+)
-        logits_7 = logits_7 + mask_7.unsqueeze(0)
+        # Position 7: Tempo (must be valid)
+        logits_7 = all_logits[7].clone()
+        logits_7[:5] = -float('inf')  # Only allow 5+
         probs_7 = torch.softmax(logits_7 / temperature, dim=-1)
-        next_arr[7] = torch.multinomial(probs_7[0], 1).item()
+        next_arr[7] = torch.multinomial(probs_7, 1).item()
         
-    else:  # Note family (5)
-        # Position 1: Set to Ignore_None (4)
+    else:  # Note (5)
         next_arr[1] = 4
-        current_token[0, 0, 1] = 4
         
-        # Position 2: Pitch (must be valid, 5+)
-        logits_2 = model.forward_output(current_token, 2)
-        mask_2 = torch.ones_like(logits_2[0]) * float('-inf')
-        mask_2[5:] = 0  # Allow Pitch_X (5+)
-        logits_2 = logits_2 + mask_2.unsqueeze(0)
+        # Pitch
+        logits_2 = all_logits[2].clone()
+        logits_2[:5] = -float('inf')
         probs_2 = torch.softmax(logits_2 / temperature, dim=-1)
-        next_arr[2] = torch.multinomial(probs_2[0], 1).item()
-        current_token[0, 0, 2] = next_arr[2]
+        next_arr[2] = torch.multinomial(probs_2, 1).item()
         
-        # Position 3: Velocity (must be valid, 5+)
-        logits_3 = model.forward_output(current_token, 3)
-        mask_3 = torch.ones_like(logits_3[0]) * float('-inf')
-        mask_3[5:] = 0  # Allow Velocity_X (5+)
-        logits_3 = logits_3 + mask_3.unsqueeze(0)
+        # Velocity
+        logits_3 = all_logits[3].clone()
+        logits_3[:5] = -float('inf')
         probs_3 = torch.softmax(logits_3 / temperature, dim=-1)
-        next_arr[3] = torch.multinomial(probs_3[0], 1).item()
-        current_token[0, 0, 3] = next_arr[3]
+        next_arr[3] = torch.multinomial(probs_3, 1).item()
         
-        # Position 4: Duration (must be valid, 5+)
-        logits_4 = model.forward_output(current_token, 4)
-        mask_4 = torch.ones_like(logits_4[0]) * float('-inf')
-        mask_4[5:] = 0  # Allow Duration_X (5+)
-        logits_4 = logits_4 + mask_4.unsqueeze(0)
+        # Duration
+        logits_4 = all_logits[4].clone()
+        logits_4[:5] = -float('inf')
         probs_4 = torch.softmax(logits_4 / temperature, dim=-1)
-        next_arr[4] = torch.multinomial(probs_4[0], 1).item()
+        next_arr[4] = torch.multinomial(probs_4, 1).item()
         
-        # Positions 5-7: Set to Ignore_None (4)
-        for i in range(5, 8):
-            next_arr[i] = 4
+        # Rest: Ignore
+        next_arr[5:8] = 4
     
     return next_arr
 
