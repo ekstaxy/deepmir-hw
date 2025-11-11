@@ -282,20 +282,34 @@ def inference_cpword_32bars(model, tokenizer, device, temperature=1.0, target_ba
 
 
 def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
+    """
+    Convert CPWord tokens to MIDI and save
+    Matches inference.py logic for consistency
+    """
     # Concatenate if list of arrays
     if isinstance(tokens, list):
         tokens = np.concatenate(tokens, axis=0)
-    
-    tokens = np.where(tokens < 4, 4, tokens)
-    
-    # Clip to valid range
+
+    # Clip to valid range for each vocabulary
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
-    # print(tokens.tolist())
+    # Filter out tokens where Family (position 0) is a special token (0-3)
+    # Family should be 4 (Metric) or 5 (Note), not 0-3 (PAD/BOS/EOS/MASK)
+    valid_mask = tokens[:, 0] >= 4
 
-    # Decode
-    midi = tokenizer([tokens])
+    # Always keep first token if it's BOS
+    if len(tokens) > 0 and tokens[0, 0] == 1:  # BOS_None
+        valid_mask[0] = True
+
+    filtered_tokens = tokens[valid_mask]
+
+    # Add EOS token at the end
+    eos_token = np.array([[2, 2, 2, 2, 2, 2, 2, 2]])  # EOS_None across all dimensions
+    filtered_tokens = np.vstack([filtered_tokens, eos_token])
+
+    # Decode to MIDI
+    midi = tokenizer([filtered_tokens])
     midi.dump_midi(output_path)
 
 

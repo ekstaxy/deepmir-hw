@@ -101,54 +101,54 @@ class Dataset_Pop1K7(Dataset):
     def __getitem__(self, idx):
         file_idx, start_bar, num_bars = self.valid_chunks[idx]
         midi_file = self.midi_files[file_idx]
-        
+
         score = Score(str(midi_file))
         score = self._augment_midi(score)
-        
+
         tokens = self.tokenizer(score)
         if isinstance(tokens, list):
             tokens = tokens[0]
-        
+
         if self.tokenizer_type == 'REMI':
-            return self._process_remi_tokens(tokens)
+            return self._process_remi_tokens(tokens, idx)
         else:
-            return self._process_cpword_tokens(tokens)
-    
-    def _process_remi_tokens(self, tokens):
+            return self._process_cpword_tokens(tokens, idx)
+
+    def _process_remi_tokens(self, tokens, chunk_idx):
         max_token_id = len(self.tokenizer) - 1
         token_ids = tokens.ids
         token_strings = tokens.tokens
-        
+
         for i, t in enumerate(token_ids):
             if t >= len(self.tokenizer):
                 token_ids[i] = 0
                 token_strings[i] = "PAD_None"
-        
+
         bar_positions = [
-            i for i, token in enumerate(token_strings) 
+            i for i, token in enumerate(token_strings)
             if token == self.bar_token
         ]
-        
-        chunk = self._extract_chunk(token_ids, bar_positions)
+
+        chunk = self._extract_chunk(token_ids, bar_positions, chunk_idx)
         sequence = [self.bos_id] + chunk + [self.eos_id]
-        
+
         return torch.tensor(sequence, dtype=torch.long)
-    
-    def _process_cpword_tokens(self, tokens):
+
+    def _process_cpword_tokens(self, tokens, chunk_idx):
         token_ids = np.array(tokens.ids)
-        
+
         for i in range(8):
             vocab_size = len(self.tokenizer.vocab[i])
             mask = token_ids[:, i] >= vocab_size
             if mask.any():
                 token_ids[mask, i] = 0
-        
+
         bar_positions = [
             i for i in range(len(token_ids))
             if token_ids[i, 1] == self.bar_type_id
         ]
-        
-        chunk = self._extract_chunk(token_ids, bar_positions)
+
+        chunk = self._extract_chunk(token_ids, bar_positions, chunk_idx)
 
         if len(chunk) > 3072:
             chunk = chunk[:3072]
@@ -158,29 +158,53 @@ class Dataset_Pop1K7(Dataset):
             chunk,
             self.eos_token
         ])
-        
+
         return torch.tensor(sequence, dtype=torch.long)
-    
-    def _extract_chunk(self, token_ids, bar_positions):
-        file_idx, start_bar, num_bars = self.valid_chunks[0]
-        
+
+    def _extract_chunk(self, token_ids, bar_positions, chunk_idx):
+        """
+        Extract a chunk of tokens based on bar positions
+
+        Args:
+            token_ids: Token sequence (1D for REMI, 2D for CPWord)
+            bar_positions: List of indices where bars occur
+            chunk_idx: Index into self.valid_chunks to get chunk info
+
+        Returns:
+            Extracted chunk of tokens
+        """
+        file_idx, start_bar, num_bars = self.valid_chunks[chunk_idx]
+
+        # Handle case where start_bar is within available bars
         if start_bar < len(bar_positions):
             start_idx = bar_positions[start_bar]
-            
+
+            # Calculate end position (start_bar + desired chunk size, or end of file)
             end_bar = min(start_bar + self.bars_per_chunk, len(bar_positions))
             if end_bar < len(bar_positions):
                 end_idx = bar_positions[end_bar]
             else:
                 end_idx = len(token_ids)
-            
+
             chunk = token_ids[start_idx:end_idx]
         else:
-            if len(bar_positions) >= self.bars_per_chunk:
-                end_idx = bar_positions[self.bars_per_chunk]
+            # Fallback: start_bar >= available bars
+            # This should rarely happen if valid_chunks was built correctly
+            # Take from beginning up to bars_per_chunk
+            if len(bar_positions) > 0:
+                end_bar = min(self.bars_per_chunk, len(bar_positions))
+                if end_bar < len(bar_positions):
+                    end_idx = bar_positions[end_bar]
+                else:
+                    end_idx = len(token_ids)
+                chunk = token_ids[:end_idx]
             else:
-                end_idx = len(token_ids)
-            chunk = token_ids[:end_idx]
-        
+                # No bars found - take first 3072 tokens as safety
+                if len(token_ids) > 3072:
+                    chunk = token_ids[:3072]
+                else:
+                    chunk = token_ids
+
         return chunk
 
 
