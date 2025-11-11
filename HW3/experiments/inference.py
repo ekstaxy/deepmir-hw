@@ -1,12 +1,14 @@
 """
 inference.py - Music generation inference with CPWord support and continuation
 """
+import os
 import sys
+from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
+
 import torch
 import argparse
-import os
 from pathlib import Path
 from miditok import REMI, CPWord
 from model.model_transformers import GPT2, TransformerXL, CPWordModel
@@ -296,7 +298,7 @@ def generate_continuation_cpword(
         
         # Generate continuation
         cnt_bar = prompt_bar_count
-        max_len = 3000
+        max_len = 3074
         for gen_step in range(max_len):
             next_arr = model.forward_output_sampling(h, y_family)
             final_res.append(next_arr[None, ...])
@@ -331,22 +333,22 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     Returns:
         bool: True if successful
     """
-    try:
-        # Convert NaN or invalid values to padding tokens
-        if np.isnan(tokens).any():
-            print(f"  Warning: Found NaN values, replacing with PAD tokens")
-            pad_tokens = np.array([tokenizer.vocab[i].get("PAD_None", 0) for i in range(8)])
-            nan_mask = np.isnan(tokens)
-            for i in range(8):
-                tokens[nan_mask[:, i], i] = pad_tokens[i]
+    # Concatenate if list of arrays
+    if isinstance(tokens, list):
+        tokens = np.concatenate(tokens, axis=0)
+    
+    tokens = np.where(tokens < 4, 4, tokens)
+    print([tokens])
+    
+    # Clip to valid range
+    for i in range(8):
+        tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
 
-        # Convert to MIDI
-        midi = tokenizer([tokens])
-        midi.dump_midi(output_path)
-        
-    except Exception as e:
-        print(f"  Error converting tokens to MIDI: {e}")
-        return False
+    # print(tokens.tolist())
+
+    # Decode
+    midi = tokenizer([tokens])
+    midi.dump_midi(output_path)
 
 
 def generate_unconditional_remi(
