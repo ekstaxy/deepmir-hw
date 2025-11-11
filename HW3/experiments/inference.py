@@ -126,7 +126,8 @@ def generate_unconditional_cpword(
     tokenizer,
     num_samples=20,
     target_bars=32,
-    device='cuda'
+    device='cuda',
+    temperature=1.0
 ):
     """
     Unconditional generation for CPWord model
@@ -137,6 +138,7 @@ def generate_unconditional_cpword(
         num_samples: number of sequences to generate
         target_bars: number of bars to generate
         device: torch device
+        temperature: sampling temperature
     
     Returns:
         List of generated token sequences (each is numpy array of shape [seq_len, 8])
@@ -145,7 +147,7 @@ def generate_unconditional_cpword(
     
     # Get BOS token (8-dimensional)
     bos_token = np.array([[
-        tokenizer.vocab[i].get("BOS_None", 0) 
+        tokenizer.vocab[i].get("BOS_None", 1) 
         for i in range(8)
     ]])
     
@@ -159,6 +161,7 @@ def generate_unconditional_cpword(
     
     print(f"\nGenerating {num_samples} samples unconditionally...")
     print(f"  Target bars: {target_bars}")
+    print(f"  Bar token ID: {bar_token_id}")
     
     for i in range(num_samples):
         print(f"  Sample {i+1}/{num_samples}...", end='\r')
@@ -179,7 +182,8 @@ def generate_unconditional_cpword(
             # Generate tokens
             max_len = 3074
             for gen_step in range(max_len):
-                next_arr = model.forward_output_sampling(h, y_family)
+                # Sample next token with proper CPWord constraints
+                next_arr = sample_cpword_token(model, h, y_family, temperature, device)
                 final_res.append(next_arr[None, ...])
                 
                 # Count bars
@@ -199,6 +203,88 @@ def generate_unconditional_cpword(
     
     print(f"\n✓ Generated {len(generated_sequences)} sequences")
     return generated_sequences
+
+
+def sample_cpword_token(model, h, y_family, temperature=1.0, device='cuda'):
+    """
+    Sample a single CPWord token with proper structure constraints
+    
+    Args:
+        model: CPWordModel instance
+        h: hidden state
+        y_family: family logits/output
+        temperature: sampling temperature
+        device: torch device
+    
+    Returns:
+        numpy array of shape [8] representing the sampled token
+    """
+    next_arr = np.zeros(8, dtype=np.int64)
+    
+    # Sample family (position 0): Only allow Metric (4) or Note (5)
+    family_logits = model.forward_output(h, 0)
+    mask = torch.ones_like(family_logits[0]) * float('-inf')
+    mask[4:6] = 0  # Allow indices 4 (Metric) and 5 (Note)
+    family_logits = family_logits + mask.unsqueeze(0)
+    family_probs = torch.softmax(family_logits / temperature, dim=-1)
+    next_arr[0] = torch.multinomial(family_probs[0], 1).item()
+    
+    # Sample based on family type
+    if next_arr[0] == 4:  # Metric family
+        # Position 1: Bar (5) or Position (6+)
+        logits_1 = model.forward_output(h, 1)
+        mask_1 = torch.ones_like(logits_1[0]) * float('-inf')
+        mask_1[5:] = 0  # Allow Bar (5) and Position_X (6+)
+        logits_1 = logits_1 + mask_1.unsqueeze(0)
+        probs_1 = torch.softmax(logits_1 / temperature, dim=-1)
+        next_arr[1] = torch.multinomial(probs_1[0], 1).item()
+        
+        # Positions 2-6: Set to Ignore_None (4)
+        for i in range(2, 7):
+            next_arr[i] = 4
+        
+        # Position 7: Must be valid Tempo (5+), not Ignore_None
+        logits_7 = model.forward_output(h, 7)
+        mask_7 = torch.ones_like(logits_7[0]) * float('-inf')
+        mask_7[5:] = 0  # Allow Tempo_X (5+), exclude special tokens and Ignore
+        logits_7 = logits_7 + mask_7.unsqueeze(0)
+        probs_7 = torch.softmax(logits_7 / temperature, dim=-1)
+        next_arr[7] = torch.multinomial(probs_7[0], 1).item()
+        
+    else:  # Note family (5)
+        # Position 1: Set to Ignore_None (4)
+        next_arr[1] = 4
+        
+        # Position 2: Pitch (must be valid, 5+)
+        logits_2 = model.forward_output(h, 2)
+        mask_2 = torch.ones_like(logits_2[0]) * float('-inf')
+        mask_2[5:] = 0  # Allow Pitch_X (5+)
+        logits_2 = logits_2 + mask_2.unsqueeze(0)
+        probs_2 = torch.softmax(logits_2 / temperature, dim=-1)
+        next_arr[2] = torch.multinomial(probs_2[0], 1).item()
+        
+        # Position 3: Velocity (must be valid, 5+)
+        logits_3 = model.forward_output(h, 3)
+        mask_3 = torch.ones_like(logits_3[0]) * float('-inf')
+        mask_3[5:] = 0  # Allow Velocity_X (5+)
+        logits_3 = logits_3 + mask_3.unsqueeze(0)
+        probs_3 = torch.softmax(logits_3 / temperature, dim=-1)
+        next_arr[3] = torch.multinomial(probs_3[0], 1).item()
+        
+        # Position 4: Duration (must be valid, 5+)
+        logits_4 = model.forward_output(h, 4)
+        mask_4 = torch.ones_like(logits_4[0]) * float('-inf')
+        mask_4[5:] = 0  # Allow Duration_X (5+)
+        logits_4 = logits_4 + mask_4.unsqueeze(0)
+        probs_4 = torch.softmax(logits_4 / temperature, dim=-1)
+        next_arr[4] = torch.multinomial(probs_4[0], 1).item()
+        
+        # Positions 5-7: Set to Ignore_None (4)
+        # (Chord, Rest, Tempo not used for Note tokens in basic CPWord)
+        for i in range(5, 8):
+            next_arr[i] = 4
+    
+    return next_arr
 
 
 def extract_prompt_tokens_cpword(midi_path, tokenizer, prompt_bars=8):
