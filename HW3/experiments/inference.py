@@ -160,25 +160,27 @@ def generate_unconditional_cpword(
             # Process BOS token
             input_ = init_t[0, :].unsqueeze(0).unsqueeze(0)
             final_res.append(bos_token[0, :])
-            h, _, memory = model.forward_hidden(input_, memory, is_training=False)
-            
+            h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
+
             # Generate tokens
             max_len = 3074
             for gen_step in range(max_len):
                 # Sample with constraints
-                next_arr = sample_cpword_constrained(model, h, tokenizer, temperature, device)
+                # h is [1, 1, d_model] from forward_hidden, squeeze to [d_model]
+                h_squeezed = h.squeeze(0).squeeze(0) if h.dim() == 3 else h.squeeze(0)
+                next_arr = sample_cpword_constrained(model, h_squeezed, tokenizer, temperature, device)
                 final_res.append(next_arr)
-                
+
                 # Count bars
                 if next_arr[1] == bar_token_id:
                     cnt_bar += 1
-                
+
                 if cnt_bar >= target_bars:
                     break
-                
+
                 # Continue generation
                 input_ = torch.from_numpy(next_arr).long().to(device).unsqueeze(0).unsqueeze(0)
-                h, _, memory = model.forward_hidden(input_, memory, is_training=False)
+                h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
         
         final_res = np.array(final_res)
         generated_sequences.append(final_res)
@@ -190,62 +192,101 @@ def generate_unconditional_cpword(
 def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda'):
     """
     Sample CPWord token with constraints applied AFTER getting logits from model
+
+    Args:
+        model: CPWordModel instance
+        h: hidden state from forward_hidden, shape [batch=1, d_model] or [d_model]
+        tokenizer: CPWord tokenizer
+        temperature: sampling temperature
+        device: torch device
+
+    Returns:
+        next_arr: numpy array of shape [8] containing the sampled token
     """
     next_arr = np.zeros(8, dtype=np.int64)
-    
-    # Get all logits at once from the model
-    all_logits = []
-    for i in range(8):
-        logits = model.Embedding_linear[i](h).squeeze()  # [vocab_size]
-        all_logits.append(logits)
-    
-    # Sample family first
-    family_logits = all_logits[0].clone()
-    family_logits[:4] = -float('inf')  # Block special tokens
-    family_logits[6:] = -float('inf')  # Block everything except 4,5
-    family_probs = torch.softmax(family_logits / temperature, dim=-1)
+
+    # Ensure h is 2D: [1, d_model]
+    if h.dim() == 1:
+        h = h.unsqueeze(0)
+
+    # Step 1: Sample family token first using proj_family
+    family_logits = model.proj_family(h).squeeze()  # [n_family]
+
+    # Apply constraints: only allow family tokens 4 (Metric) and 5 (Note)
+    family_logits_constrained = family_logits.clone()
+    family_logits_constrained[:4] = -float('inf')  # Block PAD, BOS, EOS, MASK
+    if len(family_logits_constrained) > 6:
+        family_logits_constrained[6:] = -float('inf')  # Block anything beyond 5
+
+    family_probs = torch.softmax(family_logits_constrained / temperature, dim=-1)
     next_arr[0] = torch.multinomial(family_probs, 1).item()
-    
-    if next_arr[0] == 4:  # Metric
-        # Position 1: Bar or Position
-        logits_1 = all_logits[1].clone()
-        logits_1[:5] = -float('inf')  # Only allow 5+
-        probs_1 = torch.softmax(logits_1 / temperature, dim=-1)
-        next_arr[1] = torch.multinomial(probs_1, 1).item()
-        
-        # Positions 2-6: Ignore
-        next_arr[2:7] = 4
-        
-        # Position 7: Tempo (must be valid)
-        logits_7 = all_logits[7].clone()
-        logits_7[:5] = -float('inf')  # Only allow 5+
-        probs_7 = torch.softmax(logits_7 / temperature, dim=-1)
-        next_arr[7] = torch.multinomial(probs_7, 1).item()
-        
-    else:  # Note (5)
+
+    # Step 2: Create target tensor for forward_output (needs ground truth family token)
+    # Create a dummy target with the sampled family token
+    dummy_target = torch.zeros(1, 1, 8, dtype=torch.long, device=device)
+    dummy_target[0, 0, 0] = next_arr[0]
+
+    # Step 3: Get logits for other vocabularies using forward_output
+    y_bar, y_pitch, y_velocity, y_duration, y_chord, y_rest, y_tempo = \
+        model.forward_output(h.unsqueeze(0), dummy_target.squeeze(0))
+
+    # Squeeze to get [vocab_size] for each
+    y_bar = y_bar.squeeze()
+    y_pitch = y_pitch.squeeze()
+    y_velocity = y_velocity.squeeze()
+    y_duration = y_duration.squeeze()
+    y_chord = y_chord.squeeze()
+    y_rest = y_rest.squeeze()
+    y_tempo = y_tempo.squeeze()
+
+    # Step 4: Sample based on family type
+    if next_arr[0] == 4:  # Metric event
+        # Bar/Position (vocab 1)
+        bar_logits = y_bar.clone()
+        bar_logits[:5] = -float('inf')  # Only allow valid bar/position tokens (5+)
+        bar_probs = torch.softmax(bar_logits / temperature, dim=-1)
+        next_arr[1] = torch.multinomial(bar_probs, 1).item()
+
+        # Positions 2-6: Set to MASK/Ignore token (typically 4)
+        next_arr[2] = 4  # Pitch: Ignore
+        next_arr[3] = 4  # Velocity: Ignore
+        next_arr[4] = 4  # Duration: Ignore
+        next_arr[5] = 4  # Chord: Ignore
+        next_arr[6] = 4  # Rest: Ignore
+
+        # Tempo (vocab 7)
+        tempo_logits = y_tempo.clone()
+        tempo_logits[:5] = -float('inf')  # Only allow valid tempo tokens (5+)
+        tempo_probs = torch.softmax(tempo_logits / temperature, dim=-1)
+        next_arr[7] = torch.multinomial(tempo_probs, 1).item()
+
+    else:  # Note event (family == 5)
+        # Bar: Set to Ignore
         next_arr[1] = 4
-        
-        # Pitch
-        logits_2 = all_logits[2].clone()
-        logits_2[:5] = -float('inf')
-        probs_2 = torch.softmax(logits_2 / temperature, dim=-1)
-        next_arr[2] = torch.multinomial(probs_2, 1).item()
-        
-        # Velocity
-        logits_3 = all_logits[3].clone()
-        logits_3[:5] = -float('inf')
-        probs_3 = torch.softmax(logits_3 / temperature, dim=-1)
-        next_arr[3] = torch.multinomial(probs_3, 1).item()
-        
-        # Duration
-        logits_4 = all_logits[4].clone()
-        logits_4[:5] = -float('inf')
-        probs_4 = torch.softmax(logits_4 / temperature, dim=-1)
-        next_arr[4] = torch.multinomial(probs_4, 1).item()
-        
-        # Rest: Ignore
-        next_arr[5:8] = 4
-    
+
+        # Pitch (vocab 2)
+        pitch_logits = y_pitch.clone()
+        pitch_logits[:5] = -float('inf')  # Only allow valid pitch tokens
+        pitch_probs = torch.softmax(pitch_logits / temperature, dim=-1)
+        next_arr[2] = torch.multinomial(pitch_probs, 1).item()
+
+        # Velocity (vocab 3)
+        velocity_logits = y_velocity.clone()
+        velocity_logits[:5] = -float('inf')  # Only allow valid velocity tokens
+        velocity_probs = torch.softmax(velocity_logits / temperature, dim=-1)
+        next_arr[3] = torch.multinomial(velocity_probs, 1).item()
+
+        # Duration (vocab 4)
+        duration_logits = y_duration.clone()
+        duration_logits[:5] = -float('inf')  # Only allow valid duration tokens
+        duration_probs = torch.softmax(duration_logits / temperature, dim=-1)
+        next_arr[4] = torch.multinomial(duration_probs, 1).item()
+
+        # Chord, Rest, Tempo: Set to Ignore
+        next_arr[5] = 4  # Chord: Ignore
+        next_arr[6] = 4  # Rest: Ignore
+        next_arr[7] = 4  # Tempo: Ignore
+
     return next_arr
 
 def extract_prompt_tokens_cpword(midi_path, tokenizer, prompt_bars=8):
