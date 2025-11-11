@@ -166,9 +166,8 @@ def generate_unconditional_cpword(
             max_len = 3074
             for gen_step in range(max_len):
                 # Sample with constraints
-                # h is [1, 1, d_model] from forward_hidden, squeeze to [d_model]
-                h_squeezed = h.squeeze(0).squeeze(0) if h.dim() == 3 else h.squeeze(0)
-                next_arr = sample_cpword_constrained(model, h_squeezed, tokenizer, temperature, device)
+                # h is [1, d_model] from forward_hidden in inference mode
+                next_arr = sample_cpword_constrained(model, h, tokenizer, temperature, device)
                 final_res.append(next_arr)
 
                 # Count bars
@@ -196,7 +195,7 @@ def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda
 
     Args:
         model: CPWordModel instance
-        h: hidden state [d_model] - squeezed hidden state from forward_hidden
+        h: hidden state [1, d_model] - hidden state from forward_hidden in inference mode
         tokenizer: CPWord tokenizer
         temperature: sampling temperature
         device: torch device
@@ -212,13 +211,15 @@ def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda
     """
     next_arr = np.zeros(8, dtype=np.int64)
 
-    # Ensure h is 1D [d_model]
-    if h.dim() > 1:
-        h = h.squeeze()
+    # Ensure h is 2D [1, d_model] (same as model.forward_output_sampling expects)
+    if h.dim() == 1:
+        h = h.unsqueeze(0)
+    elif h.dim() > 2:
+        h = h.squeeze(0)
 
     # Step 1: Get family logits and apply constraints
     # Use the same approach as model.forward_output_sampling but with constraints
-    y_family_logits = model.proj_family(h.unsqueeze(0)).squeeze()  # [n_family]
+    y_family_logits = model.proj_family(h).squeeze()  # [n_family]
 
     # Constrain family: only allow 4 (Metric) and 5 (Note)
     family_logits = y_family_logits.clone()
@@ -232,8 +233,12 @@ def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda
     next_arr[0] = cur_word_family
 
     # Step 2: Create skip connection (following model's forward_output_sampling)
-    family_word_t = torch.tensor([cur_word_family], dtype=torch.long, device=device).unsqueeze(0)
+    # family_word_t should be [1, 1] to match model's pattern
+    family_word_t = torch.tensor([[cur_word_family]], dtype=torch.long, device=device)
+    # word_emb_family expects [batch, seq] and returns [batch, seq, emb_size] = [1, 1, emb_size]
+    # squeeze(0) gives [1, emb_size] to match h's [1, d_model]
     tf_skip_family = model.word_emb_family(family_word_t).squeeze(0)
+    # Now h is [1, d_model] and tf_skip_family is [1, emb_size]
     y_concat_family = torch.cat([h, tf_skip_family], dim=-1)
     y_ = model.project_concat_family(y_concat_family)
 
