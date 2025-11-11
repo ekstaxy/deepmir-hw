@@ -191,101 +191,108 @@ def generate_unconditional_cpword(
 
 def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda'):
     """
-    Sample CPWord token with constraints applied AFTER getting logits from model
+    Constrained sampling for CPWord tokens following model's forward_output_sampling pattern
+    This ensures generated tokens follow CPWord format rules.
 
     Args:
         model: CPWordModel instance
-        h: hidden state from forward_hidden, shape [batch=1, d_model] or [d_model]
+        h: hidden state [d_model] - squeezed hidden state from forward_hidden
         tokenizer: CPWord tokenizer
         temperature: sampling temperature
         device: torch device
 
     Returns:
         next_arr: numpy array of shape [8] containing the sampled token
+
+    CPWord Format Rules:
+        - Family: Only 4 (Metric) or 5 (Note) for generation
+        - Metric events: Use Bar/Tempo, ignore Pitch/Velocity/Duration/Chord/Rest
+        - Note events: Use Pitch/Velocity/Duration, ignore Bar/Chord/Rest/Tempo
+        - Ignored positions set to 4 (MASK token)
     """
     next_arr = np.zeros(8, dtype=np.int64)
 
-    # Ensure h is 2D: [1, d_model]
-    if h.dim() == 1:
-        h = h.unsqueeze(0)
+    # Ensure h is 1D [d_model]
+    if h.dim() > 1:
+        h = h.squeeze()
 
-    # Step 1: Sample family token first using proj_family
-    family_logits = model.proj_family(h).squeeze()  # [n_family]
+    # Step 1: Get family logits and apply constraints
+    # Use the same approach as model.forward_output_sampling but with constraints
+    y_family_logits = model.proj_family(h.unsqueeze(0)).squeeze()  # [n_family]
 
-    # Apply constraints: only allow family tokens 4 (Metric) and 5 (Note)
-    family_logits_constrained = family_logits.clone()
-    family_logits_constrained[:4] = -float('inf')  # Block PAD, BOS, EOS, MASK
-    if len(family_logits_constrained) > 6:
-        family_logits_constrained[6:] = -float('inf')  # Block anything beyond 5
+    # Constrain family: only allow 4 (Metric) and 5 (Note)
+    family_logits = y_family_logits.clone()
+    family_logits[:4] = -float('inf')  # Block PAD/BOS/EOS/MASK
+    if len(family_logits) > 6:
+        family_logits[6:] = -float('inf')  # Block anything beyond 5
 
-    family_probs = torch.softmax(family_logits_constrained / temperature, dim=-1)
-    next_arr[0] = torch.multinomial(family_probs, 1).item()
+    # Sample family with temperature
+    family_probs = torch.softmax(family_logits / temperature, dim=-1)
+    cur_word_family = torch.multinomial(family_probs, 1).item()
+    next_arr[0] = cur_word_family
 
-    # Step 2: Create target tensor for forward_output (needs ground truth family token)
-    # Create a dummy target with the sampled family token
-    dummy_target = torch.zeros(1, 1, 8, dtype=torch.long, device=device)
-    dummy_target[0, 0, 0] = next_arr[0]
+    # Step 2: Create skip connection (following model's forward_output_sampling)
+    family_word_t = torch.tensor([cur_word_family], dtype=torch.long, device=device).unsqueeze(0)
+    tf_skip_family = model.word_emb_family(family_word_t).squeeze(0)
+    y_concat_family = torch.cat([h, tf_skip_family], dim=-1)
+    y_ = model.project_concat_family(y_concat_family)
 
-    # Step 3: Get logits for other vocabularies using forward_output
-    y_bar, y_pitch, y_velocity, y_duration, y_chord, y_rest, y_tempo = \
-        model.forward_output(h.unsqueeze(0), dummy_target.squeeze(0))
+    # Step 3: Get logits for all vocabularies
+    y_bar = model.proj_bar(y_)
+    y_pitch = model.proj_pitch(y_)
+    y_velocity = model.proj_velocity(y_)
+    y_duration = model.proj_duration(y_)
+    y_chord = model.proj_chord(y_)
+    y_rest = model.proj_rest(y_)
+    y_tempo = model.proj_tempo(y_)
 
-    # Squeeze to get [vocab_size] for each
-    y_bar = y_bar.squeeze()
-    y_pitch = y_pitch.squeeze()
-    y_velocity = y_velocity.squeeze()
-    y_duration = y_duration.squeeze()
-    y_chord = y_chord.squeeze()
-    y_rest = y_rest.squeeze()
-    y_tempo = y_tempo.squeeze()
-
-    # Step 4: Sample based on family type
-    if next_arr[0] == 4:  # Metric event
-        # Bar/Position (vocab 1)
+    # Step 4: Sample based on family type with constraints
+    if cur_word_family == 4:  # Metric event
+        # Bar (vocab 1): sample with constraints
         bar_logits = y_bar.clone()
-        bar_logits[:5] = -float('inf')  # Only allow valid bar/position tokens (5+)
+        bar_logits[:5] = -float('inf')  # Only allow tokens 5+
         bar_probs = torch.softmax(bar_logits / temperature, dim=-1)
         next_arr[1] = torch.multinomial(bar_probs, 1).item()
 
-        # Positions 2-6: Set to MASK/Ignore token (typically 4)
-        next_arr[2] = 4  # Pitch: Ignore
-        next_arr[3] = 4  # Velocity: Ignore
-        next_arr[4] = 4  # Duration: Ignore
-        next_arr[5] = 4  # Chord: Ignore
-        next_arr[6] = 4  # Rest: Ignore
+        # Pitch/Velocity/Duration/Chord/Rest: Ignore (set to 4)
+        next_arr[2] = 4
+        next_arr[3] = 4
+        next_arr[4] = 4
+        next_arr[5] = 4
+        next_arr[6] = 4
 
-        # Tempo (vocab 7)
+        # Tempo (vocab 7): sample with constraints
         tempo_logits = y_tempo.clone()
-        tempo_logits[:5] = -float('inf')  # Only allow valid tempo tokens (5+)
+        tempo_logits[:5] = -float('inf')  # Only allow tokens 5+
         tempo_probs = torch.softmax(tempo_logits / temperature, dim=-1)
         next_arr[7] = torch.multinomial(tempo_probs, 1).item()
 
     else:  # Note event (family == 5)
-        # Bar: Set to Ignore
+        # Bar: Ignore
         next_arr[1] = 4
 
-        # Pitch (vocab 2)
+        # Pitch (vocab 2): sample with constraints
         pitch_logits = y_pitch.clone()
-        pitch_logits[:5] = -float('inf')  # Only allow valid pitch tokens
+        pitch_logits[:5] = -float('inf')
         pitch_probs = torch.softmax(pitch_logits / temperature, dim=-1)
         next_arr[2] = torch.multinomial(pitch_probs, 1).item()
 
-        # Velocity (vocab 3)
+        # Velocity (vocab 3): sample with constraints
         velocity_logits = y_velocity.clone()
-        velocity_logits[:5] = -float('inf')  # Only allow valid velocity tokens
+        velocity_logits[:5] = -float('inf')
         velocity_probs = torch.softmax(velocity_logits / temperature, dim=-1)
         next_arr[3] = torch.multinomial(velocity_probs, 1).item()
 
-        # Duration (vocab 4)
+        # Duration (vocab 4): sample with constraints
         duration_logits = y_duration.clone()
-        duration_logits[:5] = -float('inf')  # Only allow valid duration tokens
+        duration_logits[:5] = -float('inf')
         duration_probs = torch.softmax(duration_logits / temperature, dim=-1)
         next_arr[4] = torch.multinomial(duration_probs, 1).item()
 
-        # Chord, Rest, Tempo: Set to Ignore
-        next_arr[5] = 4  # Chord: Ignore
-        next_arr[6] = 4  # Rest: Ignore
-        next_arr[7] = 4  # Tempo: Ignore
+        # Chord/Rest/Tempo: Ignore
+        next_arr[5] = 4
+        next_arr[6] = 4
+        next_arr[7] = 4
 
     return next_arr
 
