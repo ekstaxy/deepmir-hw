@@ -177,7 +177,7 @@ def generate_unconditional_cpword(
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
             
             # Generate tokens
-            max_len = 3000
+            max_len = 3074
             for gen_step in range(max_len):
                 next_arr = model.forward_output_sampling(h, y_family)
                 final_res.append(next_arr[None, ...])
@@ -337,20 +337,37 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
     if isinstance(tokens, list):
         tokens = np.concatenate(tokens, axis=0)
     
-    # tokens = np.where(tokens < 4, 4, tokens)
-
-    np.set_printoptions(threshold=np.inf, linewidth=200)
-    print([tokens.tolist()])
-    
-    # Clip to valid range
+    # Clip to valid range for each vocabulary
     for i in range(8):
         tokens[:, i] = np.clip(tokens[:, i], 0, len(tokenizer.vocab[i]) - 1)
-
-    # print(tokens.tolist())
-
-    # Decode
-    midi = tokenizer([tokens])
-    midi.dump_midi(output_path)
+    
+    # Only filter out tokens where the Family position (0) is actually a special token (0-3)
+    # Family should be 4 (Metric) or 5 (Note), not 0-3 (PAD/BOS/EOS/MASK)
+    valid_mask = tokens[:, 0] >= 4
+    
+    # Always keep first token if it's BOS
+    if len(tokens) > 0 and tokens[0, 0] == 1:  # BOS_None
+        valid_mask[0] = True
+    
+    filtered_tokens = tokens[valid_mask]
+    
+    # Add EOS token at the end
+    eos_token = np.array([[2, 2, 2, 2, 2, 2, 2, 2]])  # EOS_None across all dimensions
+    filtered_tokens = np.vstack([filtered_tokens, eos_token])
+    
+    print(f"Token filtering: {len(tokens)} -> {len(filtered_tokens)}")
+    
+    try:
+        # Decode to MIDI
+        midi = tokenizer([filtered_tokens])
+        midi.dump_midi(output_path)
+        print(f"✓ Saved MIDI to {output_path}")
+        return True
+    except Exception as e:
+        print(f"✗ Error decoding tokens: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def generate_unconditional_remi(

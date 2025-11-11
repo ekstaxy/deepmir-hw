@@ -145,7 +145,7 @@ class Dataset_Pop1K7(Dataset):
         
         bar_positions = [
             i for i in range(len(token_ids))
-            if token_ids[i, 3] == self.bar_type_id
+            if token_ids[i, 1] == self.bar_type_id
         ]
         
         chunk = self._extract_chunk(token_ids, bar_positions)
