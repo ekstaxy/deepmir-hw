@@ -349,7 +349,7 @@ def train(
     losses = []
     
     if resume_checkpoint:
-        checkpoint = torch.load(resume_checkpoint)
+        checkpoint = torch.load(resume_checkpoint, weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         losses = checkpoint['losses']
