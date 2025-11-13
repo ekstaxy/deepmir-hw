@@ -74,11 +74,11 @@ def create_optimizer(model, lr=5e-4, weight_decay=0.01):
     )
 
 
-def create_scheduler(optimizer, num_training_steps, num_warmup_steps=9840):
+def create_scheduler(optimizer, num_training_steps, num_warmup_steps=19680):
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
         num_warmup_steps=num_warmup_steps,
-        num_training_steps=98400,
+        num_training_steps=295200,
     )
     return scheduler
 
