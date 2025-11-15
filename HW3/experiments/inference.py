@@ -3,18 +3,38 @@ inference.py - Music generation inference with CPWord support and continuation
 """
 import os
 import sys
-from pathlib import Path
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
-
-import torch
 import argparse
 from pathlib import Path
-from miditok import REMI, CPWord
-from model.model_transformers import GPT2, TransformerXL, CPWordModel
+
+import torch
 import numpy as np
+from miditok import REMI, CPWord
 from symusic import Score
 
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
+from model.model_transformers import GPT2, TransformerXL, CPWordModel
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def get_bar_token_id(tokenizer):
+    """Get bar token ID from tokenizer vocabulary"""
+    bar_token_id = tokenizer.vocab[1].get("Bar_None", None)
+    if bar_token_id is None:
+        for key in tokenizer.vocab[1].keys():
+            if "Bar" in key:
+                bar_token_id = tokenizer.vocab[1][key]
+                break
+    return bar_token_id
+
+
+# ============================================================================
+# Argument Parsing
+# ============================================================================
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Generate music')
@@ -55,6 +75,10 @@ def parse_args():
     
     return parser.parse_args()
 
+
+# ============================================================================
+# Model Loading
+# ============================================================================
 
 def load_tokenizer(config_path, tokenizer_type='CPWORD'):
     """Load tokenizer from config"""
@@ -121,53 +145,57 @@ def load_model_remi(checkpoint_path, tokenizer, model_type='gpt2', device='cuda'
     return model
 
 
+# ============================================================================
+# CPWord Generation Functions
+# ============================================================================
+
 def generate_unconditional_cpword(
     model,
     tokenizer,
     num_samples=20,
     target_bars=32,
-    device='cuda',
-    temperature=1.0
+    device='cuda'
 ):
     """
-    Unconditional generation for CPWord model
+    Unconditional generation for CPWord model using official sampling method
+    Model has built-in sampling parameters (nucleus/temperature per vocabulary)
     """
     generated_sequences = []
-    
+
     # Get BOS token (8-dimensional)
     bos_token = np.array([[
-        tokenizer.vocab[i].get("BOS_None", 1) 
+        tokenizer.vocab[i].get("BOS_None", 1)
         for i in range(8)
     ]])
-    
-    # Get bar token ID from vocabulary 1 (bar vocabulary)
-    bar_token_id = tokenizer.vocab[1].get("Bar_None", 5)
-    
+
+    # Get bar token ID
+    bar_token_id = get_bar_token_id(tokenizer)
+
     print(f"\nGenerating {num_samples} samples unconditionally...")
     print(f"  Target bars: {target_bars}")
     print(f"  Bar token ID: {bar_token_id}")
-    
+    print(f"  Using model's built-in forward_output_sampling method")
+
     for i in range(num_samples):
         print(f"  Sample {i+1}/{num_samples}...", end='\r')
-        
+
         with torch.no_grad():
             final_res = []
             memory = None
-            
+
             cnt_bar = 0
             init_t = torch.from_numpy(bos_token).long().to(device)
-            
+
             # Process BOS token
             input_ = init_t[0, :].unsqueeze(0).unsqueeze(0)
             final_res.append(bos_token[0, :])
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
 
-            # Generate tokens
+            # Generate tokens using model's built-in sampling method
             max_len = 3074
             for gen_step in range(max_len):
-                # Sample with constraints
-                # h is [1, d_model] from forward_hidden in inference mode
-                next_arr = sample_cpword_constrained(model, h, tokenizer, temperature, device)
+                # Use model's forward_output_sampling (matches official implementation)
+                next_arr = model.forward_output_sampling(h, y_family)
                 final_res.append(next_arr)
 
                 # Count bars
@@ -180,159 +208,13 @@ def generate_unconditional_cpword(
                 # Continue generation
                 input_ = torch.from_numpy(next_arr).long().to(device).unsqueeze(0).unsqueeze(0)
                 h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
-        
+
         final_res = np.array(final_res)
         generated_sequences.append(final_res)
-    
+
     print(f"\n✓ Generated {len(generated_sequences)} sequences")
     return generated_sequences
 
-
-def sample_cpword_constrained(model, h, tokenizer, temperature=1.0, device='cuda'):
-    """
-    Constrained sampling for CPWord tokens following model's forward_output_sampling pattern
-    This ensures generated tokens follow CPWord format rules.
-
-    Args:
-        model: CPWordModel instance
-        h: hidden state [1, d_model] - hidden state from forward_hidden in inference mode
-        tokenizer: CPWord tokenizer
-        temperature: sampling temperature
-        device: torch device
-
-    Returns:
-        next_arr: numpy array of shape [8] containing the sampled token
-
-    CPWord Format Rules:
-        - Family: Only 4 (Metric) or 5 (Note) for generation
-        - Metric events: Use Bar/Tempo, ignore Pitch/Velocity/Duration/Chord/Rest
-        - Note events: Use Pitch/Velocity/Duration, ignore Bar/Chord/Rest/Tempo
-        - Ignored positions set to 4 (MASK token)
-    """
-    next_arr = np.zeros(8, dtype=np.int64)
-
-    # Ensure h is 2D [1, d_model] (same as model.forward_output_sampling expects)
-    if h.dim() == 1:
-        h = h.unsqueeze(0)
-    elif h.dim() > 2:
-        h = h.squeeze(0)
-
-    # Step 1: Get family logits and apply constraints
-    # Use the same approach as model.forward_output_sampling but with constraints
-    y_family_logits = model.proj_family(h).squeeze()  # [n_family]
-
-    # Constrain family: only allow 4 (Metric) and 5 (Note)
-    family_logits = y_family_logits.clone()
-    family_logits[:4] = -float('inf')  # Block PAD/BOS/EOS/MASK
-    if len(family_logits) > 6:
-        family_logits[6:] = -float('inf')  # Block anything beyond 5
-
-    # Sample family with temperature
-    family_probs = torch.softmax(family_logits / temperature, dim=-1)
-    cur_word_family = torch.multinomial(family_probs, 1).item()
-    next_arr[0] = cur_word_family
-
-    # Step 2: Create skip connection (following model's forward_output_sampling)
-    # family_word_t should be [1, 1] to match model's pattern
-    family_word_t = torch.tensor([[cur_word_family]], dtype=torch.long, device=device)
-    # word_emb_family expects [batch, seq] and returns [batch, seq, emb_size] = [1, 1, emb_size]
-    # squeeze(0) gives [1, emb_size] to match h's [1, d_model]
-    tf_skip_family = model.word_emb_family(family_word_t).squeeze(0)
-    # Now h is [1, d_model] and tf_skip_family is [1, emb_size]
-    y_concat_family = torch.cat([h, tf_skip_family], dim=-1)
-    y_ = model.project_concat_family(y_concat_family)
-
-    # Step 3: Get logits for all vocabularies
-    y_bar = model.proj_bar(y_)
-    y_pitch = model.proj_pitch(y_)
-    y_velocity = model.proj_velocity(y_)
-    y_duration = model.proj_duration(y_)
-    y_chord = model.proj_chord(y_)
-    y_rest = model.proj_rest(y_)
-    y_tempo = model.proj_tempo(y_)
-
-    # Step 4: Sample based on family type with constraints
-    # Helper function to safely sample with constraints
-    def safe_constrained_sample(logits, min_token=5, temp=1.0):
-        """
-        Sample from logits with constraint that only tokens >= min_token are valid.
-        Handles edge cases where all logits might be -inf or very small.
-        """
-        logits_constrained = logits.squeeze().clone()
-        vocab_size = len(logits_constrained)
-
-        # Apply constraint: block tokens < min_token
-        if min_token > 0 and min_token < vocab_size:
-            # Use large negative number instead of -inf to avoid NaN issues
-            logits_constrained[:min_token] = -1e10
-
-        # Apply temperature
-        logits_scaled = logits_constrained / max(temp, 1e-8)  # Prevent division by zero
-
-        # Check if all valid tokens have very low probability
-        max_valid_logit = logits_scaled[min_token:].max().item() if min_token < vocab_size else logits_scaled.max().item()
-
-        if max_valid_logit < -50:  # All valid logits are extremely negative
-            # Fallback: uniform sampling over valid tokens
-            valid_tokens = list(range(min_token, vocab_size))
-            if len(valid_tokens) == 0:
-                return min_token if min_token < vocab_size else 0
-            return int(np.random.choice(valid_tokens))
-
-        # Compute probabilities
-        probs = torch.softmax(logits_scaled, dim=-1)
-
-        # Check for NaN or inf
-        if torch.isnan(probs).any() or torch.isinf(probs).any():
-            # Fallback: uniform sampling
-            valid_tokens = list(range(min_token, vocab_size))
-            if len(valid_tokens) == 0:
-                return min_token if min_token < vocab_size else 0
-            return int(np.random.choice(valid_tokens))
-
-        # Normal sampling
-        try:
-            return torch.multinomial(probs, 1).item()
-        except RuntimeError:
-            # Last resort fallback
-            valid_tokens = list(range(min_token, vocab_size))
-            if len(valid_tokens) == 0:
-                return min_token if min_token < vocab_size else 0
-            return int(np.random.choice(valid_tokens))
-
-    if cur_word_family == 4:  # Metric event
-        # Bar (vocab 1): sample with constraints
-        next_arr[1] = safe_constrained_sample(y_bar, min_token=5, temp=temperature)
-
-        # Pitch/Velocity/Duration/Chord/Rest: Ignore (set to 4)
-        next_arr[2] = 4
-        next_arr[3] = 4
-        next_arr[4] = 4
-        next_arr[5] = 4
-        next_arr[6] = 4
-
-        # Tempo (vocab 7): sample with constraints
-        next_arr[7] = safe_constrained_sample(y_tempo, min_token=5, temp=temperature)
-
-    else:  # Note event (family == 5)
-        # Bar: Ignore
-        next_arr[1] = 4
-
-        # Pitch (vocab 2): sample with constraints
-        next_arr[2] = safe_constrained_sample(y_pitch, min_token=5, temp=temperature)
-
-        # Velocity (vocab 3): sample with constraints
-        next_arr[3] = safe_constrained_sample(y_velocity, min_token=5, temp=temperature)
-
-        # Duration (vocab 4): sample with constraints
-        next_arr[4] = safe_constrained_sample(y_duration, min_token=5, temp=temperature)
-
-        # Chord/Rest/Tempo: Ignore
-        next_arr[5] = 4
-        next_arr[6] = 4
-        next_arr[7] = 4
-
-    return next_arr
 
 def extract_prompt_tokens_cpword(midi_path, tokenizer, prompt_bars=8):
     """
@@ -355,15 +237,9 @@ def extract_prompt_tokens_cpword(midi_path, tokenizer, prompt_bars=8):
     
     # Convert to numpy array
     token_ids = np.array(tokens.ids)
-    
-    # Find bar positions (vocabulary index 1)
-    bar_token_id = tokenizer.vocab[1].get("Bar_None", None)
-    if bar_token_id is None:
-        for key in tokenizer.vocab[1].keys():
-            if "Bar" in key:
-                bar_token_id = tokenizer.vocab[1][key]
-                break
-    
+
+    # Find bar positions
+    bar_token_id = get_bar_token_id(tokenizer)
     bar_positions = []
     for i in range(len(token_ids)):
         if token_ids[i, 1] == bar_token_id:
@@ -388,69 +264,65 @@ def generate_continuation_cpword(
     device='cuda'
 ):
     """
-    Generate continuation given prompt tokens
-    
+    Generate continuation given prompt tokens (using official sampling method)
+
     Args:
         model: CPWordModel instance
         tokenizer: CPWord tokenizer
         prompt_tokens: numpy array of shape [seq_len, 8]
         target_bars: total number of bars (including prompt)
         device: torch device
-    
+
     Returns:
         numpy array of shape [seq_len, 8] - concatenated prompt + generation
     """
     # Count bars in prompt
-    bar_token_id = tokenizer.vocab[1].get("Bar_None", None)
-    if bar_token_id is None:
-        for key in tokenizer.vocab[1].keys():
-            if "Bar" in key:
-                bar_token_id = tokenizer.vocab[1][key]
-                break
-    
+    bar_token_id = get_bar_token_id(tokenizer)
     prompt_bar_count = 0
     for i in range(len(prompt_tokens)):
         if prompt_tokens[i, 1] == bar_token_id:
             prompt_bar_count += 1
-    
+
     bars_to_generate = target_bars - prompt_bar_count
-    
+
     print(f"  Prompt bars: {prompt_bar_count}, Generating: {bars_to_generate} more bars")
-    
+    print(f"  Using model's built-in forward_output_sampling method")
+
     with torch.no_grad():
         final_res = []
         memory = None
         h = None
-        
+
         # Process prompt tokens
         for step in range(len(prompt_tokens)):
             token = prompt_tokens[step]
             input_ = torch.from_numpy(token).long().to(device).unsqueeze(0).unsqueeze(0)
             final_res.append(token[None, ...])
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
-        
-        # Generate continuation
+
+        # Generate continuation using model's built-in sampling
         cnt_bar = prompt_bar_count
         max_len = 3074
-        for gen_step in range(max_len):
+        for _ in range(max_len):
+            # Use model's forward_output_sampling (matches official implementation)
             next_arr = model.forward_output_sampling(h, y_family)
             final_res.append(next_arr[None, ...])
-            
+
             # Count bars
             if bar_token_id is not None and next_arr[1] == bar_token_id:
                 cnt_bar += 1
-            
+
             if cnt_bar >= target_bars:
                 break
-            
+
             # Continue generation
             input_ = torch.from_numpy(next_arr).long().to(device)
             input_ = input_.unsqueeze(0).unsqueeze(0)
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
-    
+
     final_res = np.concatenate(final_res, axis=0)
     print(f"  Total bars in output: {cnt_bar}")
-    
+
     return final_res
 
 
@@ -502,6 +374,10 @@ def save_cpword_tokens_as_midi(tokens, tokenizer, output_path):
         traceback.print_exc()
         return False
 
+
+# ============================================================================
+# REMI Generation Functions
+# ============================================================================
 
 def generate_unconditional_remi(
     model,
@@ -594,6 +470,10 @@ def save_remi_tokens_as_midi(token_ids, tokenizer, output_path):
         print(f"Error converting tokens to MIDI: {e}")
         return False
 
+
+# ============================================================================
+# Main Entry Point
+# ============================================================================
 
 def main():
     args = parse_args()
