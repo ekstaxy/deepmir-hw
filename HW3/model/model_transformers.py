@@ -147,8 +147,10 @@ def nucleus(probs, p):
 
 def sampling(logit, p=None, t=1.0):
     logit = logit.squeeze().cpu().numpy()
-    probs = softmax_with_temperature(logits=logit, temperature=t)
-    
+    # Use default temperature of 1.0 if None
+    temperature = t if t is not None else 1.0
+    probs = softmax_with_temperature(logits=logit, temperature=temperature)
+
     if p is not None:
         cur_word = nucleus(probs, p=p)
     else:
