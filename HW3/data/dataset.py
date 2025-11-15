@@ -199,9 +199,9 @@ class Dataset_Pop1K7(Dataset):
                     end_idx = len(token_ids)
                 chunk = token_ids[:end_idx]
             else:
-                # No bars found - take first 1024 tokens as safety
-                if len(token_ids) > 1024:
-                    chunk = token_ids[:1024]
+                # No bars found - take first 2048 tokens as safety
+                if len(token_ids) > 2048:
+                    chunk = token_ids[:2048]
                 else:
                     chunk = token_ids
 
