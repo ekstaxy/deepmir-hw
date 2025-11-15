@@ -446,17 +446,28 @@ class CPWordModel(nn.Module):
 
     def forward_output_sampling(self, h, y_family):
         """
-        Sample next token during generation
-        
+        Sample next token during generation with CPWord format constraints
+
         Args:
             h: [d_model] - hidden state for current position
             y_family: [n_family] - family logits
-        
+
         Returns:
             next_arr: [8] - sampled token for each vocabulary
+
+        CPWord Format Rules:
+            Vocab 0 (Family): 0-3=special, 4=Metric, 5=Note
+            Vocab 1-7: 0-3=special, 4=Ignore, 5+=actual values
+
+            For Family_Metric (4): Use Bar/Chord/Rest/Tempo (5+), Ignore Pitch/Velocity/Duration (4)
+            For Family_Note (5): Use Pitch/Velocity/Duration (5+), Ignore Bar/Chord/Rest/Tempo (4)
         """
-        # Sample family token
-        y_family_logit = y_family[0, :]
+        # Constrain family: only allow Metric (4) or Note (5)
+        y_family_logit = y_family[0, :].clone()
+        y_family_logit[:4] = -float('inf')  # Block PAD/BOS/EOS/MASK
+        if len(y_family_logit) > 6:
+            y_family_logit[6:] = -float('inf')  # Block anything beyond Note
+
         cur_word_family = sampling(y_family_logit, p=0.90)
 
         # Create skip connection with sampled family token
@@ -475,23 +486,74 @@ class CPWordModel(nn.Module):
         y_chord    = self.proj_chord(y_)
         y_rest     = self.proj_rest(y_)
         y_tempo    = self.proj_tempo(y_)
-        
-        # Sample from each vocabulary with different temperatures/nucleus
-        cur_word_bar      = sampling(y_bar, t=1.2)
-        cur_word_pitch    = sampling(y_pitch, p=0.9)
-        cur_word_velocity = sampling(y_velocity, t=5)
-        cur_word_duration = sampling(y_duration, t=2, p=0.9)
-        cur_word_chord    = sampling(y_chord, p=0.99)
-        cur_word_rest     = sampling(y_rest, t=1.2)
-        cur_word_tempo    = sampling(y_tempo, t=1.2, p=0.9)
+
+        # Helper to constrain sampling to valid tokens
+        def constrained_sampling(logits, t=None, p=None, min_token=5, max_token=None):
+            """
+            Sample with token range constraints
+
+            Args:
+                logits: prediction logits
+                t: temperature
+                p: nucleus sampling threshold
+                min_token: minimum valid token index (default 5 to skip special tokens)
+                max_token: maximum valid token index (None = no upper limit)
+            """
+            logits_constrained = logits.clone()
+            # Block tokens below min_token (special tokens 0-4 + any others)
+            logits_constrained[0, :min_token] = -float('inf')
+            # Block tokens above max_token if specified
+            if max_token is not None and max_token < logits_constrained.size(1):
+                logits_constrained[0, max_token+1:] = -float('inf')
+            return sampling(logits_constrained, t=t, p=p)
+
+        # Sample based on family type with proper constraints
+        if cur_word_family == 4:  # Metric event
+            # Bar: allow 5+ (Bar_None or positions)
+            cur_word_bar = constrained_sampling(y_bar, t=1.2)
+
+            # Pitch/Velocity/Duration: set to Ignore (4) - not used in metric events
+            cur_word_pitch    = 4
+            cur_word_velocity = 4
+            cur_word_duration = 4
+
+            # Chord: allow 5+ (chord annotations at this position)
+            cur_word_chord = constrained_sampling(y_chord, p=0.99)
+
+            # Rest: allow 5+ (time-shift/rest information)
+            cur_word_rest = constrained_sampling(y_rest, t=1.2)
+
+            # Tempo: allow 5+ (tempo changes)
+            cur_word_tempo = constrained_sampling(y_tempo, t=1.2, p=0.9)
+
+        else:  # Note event (family == 5)
+            # Bar: set to Ignore (4) - timing handled by metric events
+            cur_word_bar = 4
+
+            # Pitch: constrain to C2 (MIDI 36) ~ C8 (MIDI 108)
+            # With pitch_range (21, 109): Pitch_1=MIDI21, so:
+            #   C2 (MIDI 36) = Pitch_16 = vocab index 20
+            #   C8 (MIDI 108) = Pitch_88 = vocab index 92
+            cur_word_pitch = constrained_sampling(y_pitch, p=0.9, min_token=20, max_token=92)
+
+            # Velocity: allow 5+ (actual velocities)
+            cur_word_velocity = constrained_sampling(y_velocity, t=5)
+
+            # Duration: allow 5+ (actual durations)
+            cur_word_duration = constrained_sampling(y_duration, t=2, p=0.9)
+
+            # Chord/Rest/Tempo: set to Ignore (4) - handled by metric events
+            cur_word_chord = 4
+            cur_word_rest  = 4
+            cur_word_tempo = 4
 
         # Combine into compound token
         # Order: family/bar/pitch/velocity/duration/chord/rest/tempo
         next_arr = np.array([
             cur_word_family, cur_word_bar, cur_word_pitch, cur_word_velocity,
             cur_word_duration, cur_word_chord, cur_word_rest, cur_word_tempo
-        ])
-        
+        ], dtype=np.int64)
+
         return next_arr
 
     def inference_from_scratch(self, dictionary, device='cuda'):
