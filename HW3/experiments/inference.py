@@ -288,11 +288,11 @@ def extract_prompt_tokens_cpword(midi_path, tokenizer, prompt_bars=8):
             bar_positions.append(i)
     
     # Extract first N bars
-    if len(bar_positions) >= prompt_bars:
+    if len(bar_positions) > prompt_bars:
         end_idx = bar_positions[prompt_bars]
         prompt_tokens = token_ids[:end_idx]
     else:
-        # If less than N bars, use all available
+        # If not enough bars, use all available
         prompt_tokens = token_ids
     
     return prompt_tokens
