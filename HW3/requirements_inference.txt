@@ -1,0 +1,26 @@
+# Requirements for Music Generation Inference
+# Install with: pip install -r requirements_inference.txt
+
+# Core ML framework
+torch
+
+# Numerical computing
+numpy
+
+# MIDI tokenization
+miditok
+
+# MIDI processing and score handling
+symusic
+
+# MIDI to audio conversion (FluidSynth wrapper)
+midi2audio
+
+# Note: You also need to install FluidSynth system package separately:
+# - Windows: Download from https://github.com/FluidSynth/fluidsynth/releases
+# - Linux: sudo apt-get install fluidsynth
+# - macOS: brew install fluidsynth
+#
+# You also need a SoundFont (.sf2) file for audio synthesis
+# - Download from: https://member.keymusician.com/Member/FluidR3_GM/index.html
+# - Or use: https://github.com/FluidSynth/fluidsynth/wiki/SoundFont
