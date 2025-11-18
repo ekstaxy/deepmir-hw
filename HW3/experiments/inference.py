@@ -61,12 +61,28 @@ def parse_args():
     parser.add_argument('--prompt_bars', type=int, default=8, 
                        help='Number of bars to use as prompt (continuation mode)')
     
-    # Sampling parameters
-    parser.add_argument('--temperature', type=float, default=1.0, help='Sampling temperature')
-    parser.add_argument('--top_k', type=int, default=50, help='Top-k sampling')
-    parser.add_argument('--top_p', type=float, default=0.95, help='Nucleus sampling')
-    parser.add_argument('--sampling_method', type=str, default='top_k', 
-                       choices=['greedy', 'top_k', 'nucleus'], help='Sampling method')
+    # Sampling parameters (REMI models)
+    parser.add_argument('--temperature', type=float, default=1.0, help='Sampling temperature (REMI)')
+    parser.add_argument('--top_k', type=int, default=50, help='Top-k sampling (REMI)')
+    parser.add_argument('--top_p', type=float, default=0.95, help='Nucleus sampling (REMI)')
+    parser.add_argument('--sampling_method', type=str, default='top_k',
+                       choices=['greedy', 'top_k', 'nucleus'], help='Sampling method (REMI)')
+
+    # CPWord-specific sampling parameters
+    parser.add_argument('--temp_family', type=float, default=1.0, help='Temperature for family sampling')
+    parser.add_argument('--temp_bar', type=float, default=1.2, help='Temperature for bar sampling')
+    parser.add_argument('--temp_pitch', type=float, default=1.0, help='Temperature for pitch sampling')
+    parser.add_argument('--temp_velocity', type=float, default=5.0, help='Temperature for velocity sampling')
+    parser.add_argument('--temp_duration', type=float, default=2.0, help='Temperature for duration sampling')
+    parser.add_argument('--temp_chord', type=float, default=1.0, help='Temperature for chord sampling')
+    parser.add_argument('--temp_rest', type=float, default=1.2, help='Temperature for rest sampling')
+    parser.add_argument('--temp_tempo', type=float, default=1.2, help='Temperature for tempo sampling')
+
+    parser.add_argument('--p_family', type=float, default=0.90, help='Nucleus p for family')
+    parser.add_argument('--p_pitch', type=float, default=0.9, help='Nucleus p for pitch')
+    parser.add_argument('--p_duration', type=float, default=0.9, help='Nucleus p for duration')
+    parser.add_argument('--p_chord', type=float, default=0.99, help='Nucleus p for chord')
+    parser.add_argument('--p_tempo', type=float, default=0.9, help='Nucleus p for tempo')
     
     # Device
     parser.add_argument('--device', type=str, default='cuda', help='Device')
@@ -154,11 +170,24 @@ def generate_unconditional_cpword(
     tokenizer,
     num_samples=20,
     target_bars=32,
-    device='cuda'
+    device='cuda',
+    temp_family=1.0, temp_bar=1.2, temp_pitch=1.0,
+    temp_velocity=5.0, temp_duration=2.0, temp_chord=1.0,
+    temp_rest=1.2, temp_tempo=1.2,
+    p_family=0.90, p_pitch=0.9, p_duration=0.9,
+    p_chord=0.99, p_tempo=0.9
 ):
     """
-    Unconditional generation for CPWord model using official sampling method
-    Model has built-in sampling parameters (nucleus/temperature per vocabulary)
+    Unconditional generation for CPWord model with configurable sampling parameters
+
+    Args:
+        model: CPWordModel instance
+        tokenizer: CPWord tokenizer
+        num_samples: number of sequences to generate
+        target_bars: target number of bars
+        device: torch device
+        temp_*: temperature parameters for each vocabulary
+        p_*: nucleus sampling parameters for each vocabulary
     """
     generated_sequences = []
 
@@ -174,7 +203,13 @@ def generate_unconditional_cpword(
     print(f"\nGenerating {num_samples} samples unconditionally...")
     print(f"  Target bars: {target_bars}")
     print(f"  Bar token ID: {bar_token_id}")
-    print(f"  Using model's built-in forward_output_sampling method")
+    print(f"  Sampling parameters:")
+    print(f"    Family: t={temp_family:.2f}, p={p_family:.2f}")
+    print(f"    Pitch:  t={temp_pitch:.2f}, p={p_pitch:.2f}")
+    print(f"    Velocity: t={temp_velocity:.2f}")
+    print(f"    Duration: t={temp_duration:.2f}, p={p_duration:.2f}")
+    print(f"    Chord:  t={temp_chord:.2f}, p={p_chord:.2f}")
+    print(f"    Tempo:  t={temp_tempo:.2f}, p={p_tempo:.2f}")
 
     for i in range(num_samples):
         print(f"  Sample {i+1}/{num_samples}...", end='\r')
@@ -191,11 +226,18 @@ def generate_unconditional_cpword(
             final_res.append(bos_token[0, :])
             h, y_family, memory = model.forward_hidden(input_, memory, is_training=False)
 
-            # Generate tokens using model's built-in sampling method
+            # Generate tokens using model's sampling with custom parameters
             max_len = 3074
             for gen_step in range(max_len):
-                # Use model's forward_output_sampling (matches official implementation)
-                next_arr = model.forward_output_sampling(h, y_family)
+                # Use model's forward_output_sampling with custom parameters
+                next_arr = model.forward_output_sampling(
+                    h, y_family,
+                    temp_family=temp_family, temp_bar=temp_bar, temp_pitch=temp_pitch,
+                    temp_velocity=temp_velocity, temp_duration=temp_duration, temp_chord=temp_chord,
+                    temp_rest=temp_rest, temp_tempo=temp_tempo,
+                    p_family=p_family, p_pitch=p_pitch, p_duration=p_duration,
+                    p_chord=p_chord, p_tempo=p_tempo
+                )
                 final_res.append(next_arr)
 
                 # Count bars
@@ -504,7 +546,20 @@ def main():
                 tokenizer=tokenizer,
                 num_samples=args.num_samples,
                 target_bars=args.n_bars,
-                device=args.device
+                device=args.device,
+                temp_family=args.temp_family,
+                temp_bar=args.temp_bar,
+                temp_pitch=args.temp_pitch,
+                temp_velocity=args.temp_velocity,
+                temp_duration=args.temp_duration,
+                temp_chord=args.temp_chord,
+                temp_rest=args.temp_rest,
+                temp_tempo=args.temp_tempo,
+                p_family=args.p_family,
+                p_pitch=args.p_pitch,
+                p_duration=args.p_duration,
+                p_chord=args.p_chord,
+                p_tempo=args.p_tempo
             )
             
             # Save MIDI files

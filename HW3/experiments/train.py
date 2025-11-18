@@ -74,11 +74,11 @@ def create_optimizer(model, lr=5e-4, weight_decay=0.01):
     )
 
 
-def create_scheduler(optimizer, num_training_steps, num_warmup_steps=19680):
+def create_scheduler(optimizer, num_training_steps, num_warmup_steps=12150):
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
         num_warmup_steps=num_warmup_steps,
-        num_training_steps=295200,
+        num_training_steps=12150,
     )
     return scheduler
 
@@ -318,7 +318,7 @@ def train(
     train_dataset,
     num_epochs=100,
     batch_size=8,
-    lr=5e-4,
+    lr=1e-4,
     device='cuda',
     checkpoint_dir='./checkpoints',
     save_every=20,

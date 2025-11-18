@@ -446,13 +446,20 @@ class CPWordModel(nn.Module):
 
         return y_bar, y_pitch, y_velocity, y_duration, y_chord, y_rest, y_tempo
 
-    def forward_output_sampling(self, h, y_family):
+    def forward_output_sampling(self, h, y_family,
+                               temp_family=1.0, temp_bar=1.2, temp_pitch=1.0,
+                               temp_velocity=5.0, temp_duration=2.0, temp_chord=1.0,
+                               temp_rest=1.2, temp_tempo=1.2,
+                               p_family=0.90, p_pitch=0.9, p_duration=0.9,
+                               p_chord=0.99, p_tempo=0.9):
         """
         Sample next token during generation with CPWord format constraints
 
         Args:
             h: [d_model] - hidden state for current position
             y_family: [n_family] - family logits
+            temp_*: temperature parameters for each vocabulary
+            p_*: nucleus sampling parameters for each vocabulary
 
         Returns:
             next_arr: [8] - sampled token for each vocabulary
@@ -470,7 +477,7 @@ class CPWordModel(nn.Module):
         if len(y_family_logit) > 6:
             y_family_logit[6:] = -float('inf')  # Block anything beyond Note
 
-        cur_word_family = sampling(y_family_logit, p=0.90)
+        cur_word_family = sampling(y_family_logit, t=temp_family, p=p_family)
 
         # Create skip connection with sampled family token
         family_word_t = torch.from_numpy(
@@ -512,7 +519,7 @@ class CPWordModel(nn.Module):
         # Sample based on family type with proper constraints
         if cur_word_family == 4:  # Metric event
             # Bar: allow 5+ (Bar_None or positions)
-            cur_word_bar = constrained_sampling(y_bar, t=1.2)
+            cur_word_bar = constrained_sampling(y_bar, t=temp_bar)
 
             # Pitch/Velocity/Duration: set to Ignore (4) - not used in metric events
             cur_word_pitch    = 4
@@ -520,13 +527,13 @@ class CPWordModel(nn.Module):
             cur_word_duration = 4
 
             # Chord: allow 5+ (chord annotations at this position)
-            cur_word_chord = constrained_sampling(y_chord, p=0.99)
+            cur_word_chord = constrained_sampling(y_chord, t=temp_chord, p=p_chord)
 
             # Rest: allow 5+ (time-shift/rest information)
-            cur_word_rest = constrained_sampling(y_rest, t=1.2)
+            cur_word_rest = constrained_sampling(y_rest, t=temp_rest)
 
             # Tempo: allow 5+ (tempo changes)
-            cur_word_tempo = constrained_sampling(y_tempo, t=1.2, p=0.9)
+            cur_word_tempo = constrained_sampling(y_tempo, t=temp_tempo, p=p_tempo)
 
         else:  # Note event (family == 5)
             # Bar: set to Ignore (4) - timing handled by metric events
@@ -536,13 +543,13 @@ class CPWordModel(nn.Module):
             # With pitch_range (21, 109): Pitch_1=MIDI21, so:
             #   C2 (MIDI 36) = Pitch_16 = vocab index 20
             #   C8 (MIDI 108) = Pitch_88 = vocab index 92
-            cur_word_pitch = constrained_sampling(y_pitch, p=0.9, min_token=20, max_token=92)
+            cur_word_pitch = constrained_sampling(y_pitch, t=temp_pitch, p=p_pitch, min_token=20, max_token=92)
 
             # Velocity: allow 5+ (actual velocities)
-            cur_word_velocity = constrained_sampling(y_velocity, t=5)
+            cur_word_velocity = constrained_sampling(y_velocity, t=temp_velocity)
 
             # Duration: allow 5+ (actual durations)
-            cur_word_duration = constrained_sampling(y_duration, t=2, p=0.9)
+            cur_word_duration = constrained_sampling(y_duration, t=temp_duration, p=p_duration)
 
             # Chord/Rest/Tempo: set to Ignore (4) - handled by metric events
             cur_word_chord = 4
