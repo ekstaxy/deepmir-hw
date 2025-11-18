@@ -295,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--tokenizer_type",
         type=str,
-        default="REMI",
+        default="CPWORD",
         choices=["REMI", "CPWORD"],
         help="Tokenizer type"
     )
@@ -332,12 +332,18 @@ if __name__ == "__main__":
     dataset = Dataset_Pop1K7(
         midi_files=midi_files,
         tokenizer=tokenizer,
-        tokenizer_type=args.tokenizer_type,
+        tokenizer_type="CPWORD",
         bars_per_chunk=32,
         pitch_augment_range=(-5, 5),
         velocity_augment_range=(-10, 10),
         augment_prob=0.5,
     )
+
+    sample = dataset[0]
+    print(f"Sample shape: {sample.shape}")
+    midi = tokenizer.decode(sample.numpy())
+    midi.save("sample_output.mid")
+
     
     dataloader = DataLoader(
         dataset,
